@@ -1,0 +1,92 @@
+<TabletPcWid>:
+    cols: 1
+    #TITULO APP
+    Label:
+        size_hint_y: None
+        height: root.height*.1
+        markup: True
+        text: "[b][color=FF0000][size=40px]PyTikZ[/size][/color][/b]"
+    #CUERPO APP
+    GridLayout:
+        size_hint_y: None
+        height: root.height*.9
+        cols: 2
+        #SECCION IZQUIERDA
+        BoxLayout:
+            ScrollView:
+                bar_width: 4
+                bar_color: [0,0,0,1]
+                GridLayout:
+                    cols: 1
+                    height: self.minimum_height
+                    rows_minimum: {0:root.height*.07, 1:root.height*.76, 2:root.height*.07, 3:root.height*.1}
+                    size_hint_y: None
+                    spacing: [0,5]
+                    #Barra acceso rapido superior.
+                    ScrollView:
+                        # size_hint_y: .1
+                        GridLayout:
+                            id: acceso_rapido_sup
+                            size_hint_x: None
+                            rows: 1
+                            col_default_width: root.width*0.15#15% del ancho total de ventana.
+                            width: self.minimum_width
+                            spacing: [5,0]
+                            Button:
+                                background_color: [1,1,1,1]
+                            Button:
+                                background_color: [1,1,1,1]
+                            Button:
+                                background_color: [1,1,1,1]
+                            Button:
+                                background_color: [1,1,1,1]
+                            Button:
+                                background_color: [1,1,1,1]
+                            Button:
+                                background_color: [1,1,1,1]
+                            Button:
+                                background_color: [1,1,1,1]
+                            Button:
+                                background_color: [1,1,1,1]
+                    #AREA DE CODIGO
+                    BoxLayout:
+                        # size_hint_y: .7
+                        canvas:
+                            Color:
+                                rgb: 1,1,1#Fondo blanco
+                            Rectangle:
+                                size: self.size
+                                pos: self.pos
+                        TextInput:
+                            id: codigo_tikz
+                            hint_text: "Escribir aqui comandos de TikZ..."
+                    #Barra acceso rapido inferior.
+                    ScrollView:
+                        # size_hint_y: .1
+                        GridLayout:
+                            id: acceso_rapido_bot
+                            size_hint_x: None
+                            rows: 1
+                            col_default_width: root.width*0.15#15% del alto total de ventana.
+                            width: self.minimum_width
+                            spacing: [5,0]
+                            Button:
+                                background_color: [1,1,1,1]
+                            Button:
+                                background_color: [1,1,1,1]
+                    #BOTON COMPILAR
+                    Button:
+                        # size_hint_y: .1
+                        text: "RECOMPILAR"
+                        background_color: [.2274509803921569,.8470588235294118,.1019607843137255,1]
+                        on_press: app.compilar(codigo_tikz.text)
+        #SECCION DERECHA
+        #AREA DE DIBUJADO
+        BoxLayout:
+            id: seccion_dibujar
+            canvas:
+                Color:
+                    rgb: 1,1,1#Fondo blanco
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
