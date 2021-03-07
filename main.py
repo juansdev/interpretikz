@@ -8,16 +8,16 @@ from kivy.core.window import Window
 from kivy.core.window import WindowBase
 from kivy.properties import OptionProperty
 from kivy.lang.builder import Builder
-from logic.main import Pytikz
-import numpy as np
 
-class Area_de_dibujar(RelativeLayout):
+from Pytikz.pytikz import Pytikz
+
+class Area_de_dibujo(RelativeLayout):
     def __init__(self):
-        super(Area_de_dibujar,self).__init__()
-        self.id = "area_de_dibujar"
+        super(Area_de_dibujo,self).__init__()
+        self.id = "Area_de_dibujo"
 
-area_de_dibujar_mobile = Area_de_dibujar()
-area_de_dibujar_pc_tablet = Area_de_dibujar()
+area_de_dibujar_mobile = Area_de_dibujo()
+area_de_dibujar_pc_tablet = Area_de_dibujo()
 
 class MobileWid(ScrollView):
     def __init__(self):
@@ -82,13 +82,13 @@ class MainApp(App):
         #Si esta en Celular...
         if responsive_estado[0] in ("XS","S"):
             mobilewid.ids["seccion_dibujar"].clear_widgets()
-            area_de_dibujar_mobile = Area_de_dibujar()
+            area_de_dibujar_mobile = Area_de_dibujo()
             mobilewid.ids["seccion_dibujar"].add_widget(area_de_dibujar_mobile)
             Pytikz(codigo_tikz,area_de_dibujar_mobile)
         #Si esta en PC o Tablet...
         else:
             tabletpcwid.ids["seccion_dibujar"].clear_widgets()
-            area_de_dibujar_pc_tablet = Area_de_dibujar()
+            area_de_dibujar_pc_tablet = Area_de_dibujo()
             tabletpcwid.ids["seccion_dibujar"].add_widget(area_de_dibujar_pc_tablet)
             Pytikz(codigo_tikz,area_de_dibujar_pc_tablet)
 

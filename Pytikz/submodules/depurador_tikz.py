@@ -26,13 +26,13 @@ class Depurador_tikz():
 
             #EJ COMANDO: \draw[red, dotted, line width= 3pt] (0,0) rectangle (2.5, 2.5);
             #Se utiliza en: \draw, \shade, \filldraw
-            self.draw_parametros = [[],{}]#EJ:[red, dotted, line width= 3pt]
+            self.parametros_comando = [[],{}]#EJ:[red, dotted, line width= 3pt]
 
             #Se utiliza en: \draw, \filldraw, \shade
             self.posiciones = []#EJ:[(0,0),(2.5, 2.5)]
 
             #Se utiliza en: \draw
-            self.figura = "" #EJ: rectangle
+            self.figuras = [] #EJ: rectangle
 
             #Se utiliza en: \draw
             self.funcion_de_figura = [[],{}]#EJ: arc[start angle = 0, end angle = 45, radius = 1];
@@ -56,9 +56,9 @@ class Depurador_tikz():
                     self.comando_tikz = ""
                     self.funcion_de_comando = [[],{}]
                     self.draw_objeto = {}
-                    self.draw_parametros = [[],{}]
+                    self.parametros_comando = [[],{}]
                     self.posiciones = []
-                    self.figura = ""
+                    self.figuras = []
                     self.funcion_de_figura = [[],{}]
             self.linea_codigo += 1
         if(len(self.mensajes_de_error)>0):
@@ -68,66 +68,36 @@ class Depurador_tikz():
         return self.comandos_tikz
 
     def validador_codigo(self,codigo):
-        def figuras(codigo):
-            if(codigo.find("rectangle")!=-1):
-                return "rectangle"
-            elif(codigo.find("arc ")!=-1):
-                return "arc"
-            elif(codigo.find("circle")!=-1):
-                return "circle"
-            elif(codigo.find("controls")!=-1):
-                return "controls"
-            return ""
-        
-        if(re.search("^draw",codigo)):
-            self.comando_tikz = "draw"
-            #\draw[red, dotted, line width= 3pt] (0,0) rectangle (2.5, 2.5);
-            #Tiene figura
-            self.figura = figuras(codigo)
-            self.validador_parametros(codigo)
+        #Draw o filldraw o fill solo tienen 2 formas: "draw " o "draw["
+        if(re.search("^draw ",codigo) or re.search("^filldraw ",codigo) or re.search("^fill ",codigo) or re.search("^draw\\[",codigo) or re.search("^filldraw\\[",codigo) or re.search("^fill\\[",codigo)):
+            if(re.search("^draw ",codigo) or re.search("^draw\\[",codigo)):
+                self.comando_tikz = "draw"
+            elif(re.search("^filldraw ",codigo) or re.search("^filldraw\\[",codigo)):
+                self.comando_tikz = "filldraw"
+            elif(re.search("^fill ",codigo) or re.search("^fill\\[",codigo)):
+                self.comando_tikz = "fill"
+                
+            self.figuras = self.validar_figuras(codigo)
+            self.validador_parametros_comando(codigo)
             self.validador_posiciones(codigo)
-            #Si no tiene figura
-            if not self.figura:
-                if(codigo.find("arc[")):
-                    codigo_copia = codigo[slice(codigo.find("arc["),len(codigo))]
-                    # print(codigo_copia)
-                    if(codigo_copia.find("]") != -1):
-                        self.figura = "arc"
-                        raw_parametros = codigo_copia[slice(codigo_copia.find("[")+1,codigo_copia.find("]"))].split(",")
-                        #\draw[thick, <->, >=stealth](2,-2) arc[start angle = 0, end angle = 45, radius = 1]; 
-                        for parametro in raw_parametros:
-                            if(parametro.find("=") != -1):
-                                clave_parametro = parametro[slice(0,parametro.find("="))]
-                                valor_parametro = parametro[slice(parametro.find("=")+1,len(parametro))]
-                                self.funcion_de_figura[1][clave_parametro] = valor_parametro
-                            else:
-                                self.funcion_de_figura[0].append(parametro)
-            self.comandos_tikz.append([self.comando_tikz,self.draw_parametros,self.posiciones,self.figura,self.funcion_de_figura])
-        
-        elif(re.search("^filldraw",codigo)):
-            self.comando_tikz = "filldraw"
-            #\draw[red, dotted, line width= 3pt] (0,0) rectangle (2.5, 2.5);
-            #Tiene figura
-            self.figura = figuras(codigo)
-            self.validador_parametros(codigo)
-            self.validador_posiciones(codigo)
-            self.comandos_tikz.append([self.comando_tikz,self.draw_parametros,self.posiciones,self.figura])
+            self.comandos_tikz.append([self.comando_tikz,self.parametros_comando,self.posiciones,self.figuras,self.funcion_de_figura])
         
         elif(re.search("^shade",codigo)):
             self.comando_tikz = "shade"
-            #\draw[red, dotted, line width= 3pt] (0,0) rectangle (2.5, 2.5);
-            self.validador_parametros(codigo)
+            self.validador_parametros_comando(codigo)
             self.validador_posiciones(codigo)
-            self.comandos_tikz.append([self.comando_tikz,self.draw_parametros,self.posiciones])
+            self.comandos_tikz.append([self.comando_tikz,self.parametros_comando,self.posiciones,self.figuras,self.funcion_de_figura])
 
         elif(re.search("^tikzset",codigo)):
             self.comando_tikz = "tikzset"
-            self.validador_parametros(codigo)
-            self.comandos_tikz.append([self.comando_tikz,self.funcion_de_comando])
+            self.validador_parametros_comando(codigo)
+            self.comandos_tikz.append([self.comando_tikz, self.funcion_de_comando])
+        else:
+            self.mensajes_de_error.append("Error en la Linea "+str(self.linea_codigo)+ " el comando TikZ no es valido.")
 
-    def validador_parametros(self,codigo):
+    def validador_parametros_comando(self,codigo):
         #Tiene parametros
-        if(codigo.find("draw[") != -1):
+        if(codigo.find(self.comando_tikz+"[") != -1):
             if(codigo.find("]") != -1):
                 raw_parametros = codigo[slice(codigo.find("[")+1,codigo.find("]"))].split(",")
                 #\draw[red, dotted, line width= 3pt] (0,0) rectangle (2.5, 2.5);
@@ -136,9 +106,9 @@ class Depurador_tikz():
                     if(parametro.find("=") != -1):
                         clave_parametro = parametro[slice(0,parametro.find("="))]
                         valor_parametro = parametro[slice(parametro.find("=")+1,len(parametro))]
-                        self.draw_parametros[1][clave_parametro] = valor_parametro
+                        self.parametros_comando[1][clave_parametro] = valor_parametro
                     else:
-                        self.draw_parametros[0].append(parametro)
+                        self.parametros_comando[0].append(parametro)
         #Tiene parametros funcion de Comando \tikzset{}
         elif(codigo.find(self.comando_tikz+"{")!= -1):
             if(codigo.find("}") != -1):
@@ -158,8 +128,6 @@ class Depurador_tikz():
                     ##{estilo global/.style : {line width=1.25pt, draw = cyan!75!gray,dashed}}
                     objeto_str = "{"+'"'+objeto_str[objeto_str.find("{")+1:objeto_str.find("=")]+'":"'+objeto_str[objeto_str.find("=")+1:len(objeto_str)-1]+'"}'
                     #"'"+test[:len(test)]+"'" 
-                    print("objeto_str")
-                    print(objeto_str)
                     diccionario_objeto = {}
                     try:
                         ##OBJETO {estilo global/.style : "{line width=1.25pt, draw = cyan!75!gray,dashed}"}
@@ -170,8 +138,6 @@ class Depurador_tikz():
                         key_diccionario_objeto = list(diccionario_objeto.keys())[0]
                         valor_diccionario_objeto = diccionario_objeto[key_diccionario_objeto]
                         valor_diccionario_objeto = valor_diccionario_objeto[slice(valor_diccionario_objeto.find("{")+1,valor_diccionario_objeto.find("}"))].split(",")
-                        print("valor_diccionario_objeto")
-                        print(valor_diccionario_objeto)#[line width=1.25pt, draw = cyan!75!gray,dashed]
                         objeto_valor = [[],{}]
                         for parametro in valor_diccionario_objeto:
                             if(parametro.find("=") != -1):
@@ -204,30 +170,91 @@ class Depurador_tikz():
                         valor_diccionario_objeto = valor_diccionario_objeto[str(key_diccionario_objeto)]
                         #ARRAY['{line width=1.25pt', ' draw = #1', ' #2}', ' estilo global/.default = {cyan}{dotted}']
                         valor_diccionario_objeto = valor_diccionario_objeto.split(",")
+                        valor_diccionario_objeto_limpio = []
+                        for valor in valor_diccionario_objeto:
+                            if valor.find("{") != -1 or valor.find("}") != -1:
+                                valor_limpio = ""
+                                if valor.find("{") != -1:
+                                    valor_limpio = valor[valor.find("{")+1::].strip()
+                                    if valor_limpio.find("}") != -1:
+                                        valor_limpiar_impureza = []
+                                        valor_limpio = [valor for valor in valor_limpio.split("}") if valor]
+                                        for valor_2 in valor_limpio:
+                                            if valor_2.find("{") != -1:
+                                                valor_limpiar_impureza.append(valor_2[valor_2.find("{")+1::])
+                                            else:
+                                                valor_limpiar_impureza.append(valor_2)
+                                        valor_limpio = "["+",".join(valor_limpiar_impureza)+"]"
+                                    valor_diccionario_objeto_limpio.append(valor[0:valor.find("{")].strip()+valor_limpio)
+                                else:
+                                    valor_diccionario_objeto_limpio.append(valor[0:valor.find("}")].strip())
+                            else:
+                                valor_diccionario_objeto_limpio.append(valor.strip())
                         # print("valor_diccionario_objeto")
                         # print(valor_diccionario_objeto)
                         objeto_valor = [[[],{}],[[],{}]]
                         indice = 0
-                        for parametro in valor_diccionario_objeto:
-                            if(parametro.find("=") != -1):
-                                valor_clave_parametro = parametro[slice(0,parametro.find("="))]
-                                valor_valor_parametro = parametro[slice(parametro.find("=")+1,len(parametro))]
-                                if indice == 0:
+                        for parametro in valor_diccionario_objeto_limpio:
+                            if indice != len(valor_diccionario_objeto_limpio)-1:
+                                if(parametro.find("=") != -1):
+                                    valor_clave_parametro = parametro[slice(0,parametro.find("="))]
+                                    valor_valor_parametro = parametro[slice(parametro.find("=")+1,len(parametro))]
                                     objeto_valor[0][1][valor_clave_parametro] = valor_valor_parametro
-                                elif indice == 1:
-                                    objeto_valor[1][1][valor_clave_parametro] = valor_valor_parametro
-                            else:
-                                if indice == 0:
+                                else:
                                     objeto_valor[0][0].append(parametro)
-                                elif indice == 1:
+                            else:
+                                if(parametro.find("=") != -1):
+                                    valor_clave_parametro = parametro[slice(0,parametro.find("="))]
+                                    valor_valor_parametro = parametro[slice(parametro.find("=")+1,len(parametro))]
+                                    objeto_valor[1][1][valor_clave_parametro] = valor_valor_parametro
+                                else:
                                     objeto_valor[1][0].append(parametro)
                             indice+=1
                         self.funcion_de_comando[1][key_diccionario_objeto_padre] = {key_diccionario_objeto:objeto_valor}
                 #estilo global/.style n args = {2}{line width=1.25pt, draw = #1, #2}, estilo global/.default = {cyan}{dotted}
-                #ARRAY[0] = [[#2],{line width:1.25pt, draw : #1}]
-                #ARARY[1] = [[],{estilo global/.default:["cyan","dotted"]}]
+                #ARRAY[0] = [[#2],{line width:1.25pt, draw : #1}] -> [['#2'], {'line width': '1.25pt', ' draw ': ' #1'}]
+                #ARARY[1] = [[],{estilo global/.default:["cyan","dotted"]}] -> [[], {'estilo global/.default ': '[cyan,dotted]'}]]
                 #[[],{estilo global/.style n args: {2:[[#ARRAY 0],[#ARRAY 1]]}}]
-                        
+
+    def validar_figuras(self,codigo):
+        figuras = []
+        if(codigo.find(" rectangle ")!=-1):
+            figuras_regex = re.compile(" rectangle ")
+            for figura in figuras_regex.finditer(codigo):
+                figuras.append(figura.group().strip())
+        if(codigo.find(" arc ")!=-1):
+            figuras_regex = re.compile(" arc ")
+            for figura in figuras_regex.finditer(codigo):
+                figuras.append(figura.group().strip())
+        if(codigo.find("circle")!=-1):
+            figuras_regex = re.compile(" circle ")
+            for figura in figuras_regex.finditer(codigo):
+                figuras.append(figura.group().strip())
+        if(codigo.find(" controls ")!=-1):
+            figuras_regex = re.compile(" controls ")
+            for figura in figuras_regex.finditer(codigo):
+                figuras.append(figura.group().strip())
+        if(codigo.find(" -- ")!=-1):
+            figuras.append("--")
+        #Tiene figura con parametro
+        if(codigo.find("arc[")):
+            codigo_copia = codigo[slice(codigo.find("arc["),len(codigo))]
+            # print(codigo_copia)
+            if(codigo_copia.find("]") != -1):
+                raw_parametros = codigo_copia[slice(codigo_copia.find("[")+1,codigo_copia.find("]"))].split(",")
+                #\draw[thick, <->, >=stealth](2,-2) arc[start angle = 0, end angle = 45, radius = 1]; 
+                for parametro in raw_parametros:
+                    if(parametro.find("=") != -1):
+                        clave_parametro = parametro[slice(0,parametro.find("="))]
+                        valor_parametro = parametro[slice(parametro.find("=")+1,len(parametro))]
+                        self.funcion_de_figura[1][clave_parametro] = valor_parametro
+                    else:
+                        self.funcion_de_figura[0].append(parametro)
+                figuras.append("arc")
+        print("figuras por linea")
+        print(figuras)
+        return figuras if len(figuras)>0 else ""
+
     def validador_posiciones(self,codigo):
         #Tiene posiciones ()
         if codigo.find("(") != -1 or codigo.find(")") != -1:
@@ -235,23 +262,23 @@ class Depurador_tikz():
             #Primero se saca el contenido de los ()
             while True:
                 if codigo_copia.find("(") != -1 and codigo_copia.find(")") != -1:
-                    posiciones_validar = codigo_copia[slice(codigo_copia.find("(")+1,codigo_copia.find(")"))].split(",")
-                    radio_arc = codigo_copia[slice(codigo_copia.find("(")+1,codigo_copia.find(")"))].split(":")
+                    posicion_normal = codigo_copia[slice(codigo_copia.find("(")+1,codigo_copia.find(")"))].split(",")
+                    posicion_por_angulo = codigo_copia[slice(codigo_copia.find("(")+1,codigo_copia.find(")"))].split(":")
                 elif codigo_copia.find("(") != -1 or codigo_copia.find(")") != -1:
                     self.mensajes_de_error.append("Error en la linea "+str(self.linea_codigo)+" se esperaba ()")
-                    posiciones_validar = []
-                    radio_arc = []
+                    posicion_normal = []
+                    posicion_por_angulo = []
                 else:
-                    posiciones_validar = []
-                    radio_arc = []
+                    posicion_normal = []
+                    posicion_por_angulo = []
                 # print("CODIGO COPIA ANTERIOR")
                 # print(codigo_copia)
                 #arc (0:30:3mm) -> Parametros donde (Angulo inicial, Angulo final, radio)
-                if(len(radio_arc)==3):
+                if(len(posicion_por_angulo)==3):
                     posicion_valido = True
                     #Se verifica si los valores de los () sean validos
                     indice = 0
-                    for posicion in radio_arc:
+                    for posicion in posicion_por_angulo:
                         #["",""]
                         if not posicion:
                             self.mensajes_de_error.append("Debe de haber 3 coordenadas, el Valor Angulo Inicial, Angulo Final, Radio")
@@ -268,7 +295,39 @@ class Depurador_tikz():
                                     break
                         indice+=1
                     if posicion_valido:
-                        self.posiciones.append(tuple(map(str,radio_arc)))
+                        self.posiciones.append(tuple(map(str,posicion_por_angulo)))
+                        #Elimino el parametro ya validado del codigo.
+                        codigo_copia = codigo_copia[slice(codigo_copia.find(")")+1,len(codigo_copia))]
+                        # print("CODIGO COPIA ACTUALIZADO")
+                        # print(codigo_copia)
+                    else:
+                        self.posiciones = []
+                        #\draw[line width= 1.5pt, fill = yellow, draw  = black](5,0) -- (8,0) -- (5,3) -- cycle;
+                        break
+                #\draw (0,0) -- (90:1cm); -> Parametros donde (Angulo, Unidad a dibujar a partir del angulo.)
+                elif(len(posicion_por_angulo)==2):
+                    posicion_valido = True
+                    #Se verifica si los valores de los () sean validos
+                    indice = 0
+                    for posicion in posicion_por_angulo:
+                        #["",""]
+                        if not posicion:
+                            self.mensajes_de_error.append("Debe de haber 2 valores, el Angulo y la Unidad Metrica")
+                            posicion_valido = False
+                            break
+                        #[1.1,2.2]
+                        else:
+                            if indice < 1:
+                                try:
+                                    float(posicion)
+                                except:
+                                    self.mensajes_de_error.append("El valor debe de ser de tipo FLOAT o INTEGER")
+                                    posicion_valido = False
+                                    break
+                        indice+=1
+                    if posicion_valido:
+                        valor_angulo = ":".join(posicion_por_angulo)
+                        self.posiciones.append(valor_angulo)
                         #Elimino el parametro ya validado del codigo.
                         codigo_copia = codigo_copia[slice(codigo_copia.find(")")+1,len(codigo_copia))]
                         # print("CODIGO COPIA ACTUALIZADO")
@@ -278,26 +337,18 @@ class Depurador_tikz():
                         #\draw[line width= 1.5pt, fill = yellow, draw  = black](5,0) -- (8,0) -- (5,3) -- cycle;
                         break
                 #Solo hay 2 posiciones X y Y.
-                elif(len(posiciones_validar)==2):
-                    # print(posiciones_validar)
+                elif(len(posicion_normal)==2):
+                    # print(posicion_normal)
                     posicion_valido = True
                     #Se verifica si los valores de los () sean validos
-                    for posicion in posiciones_validar:
+                    for posicion in posicion_normal:
                         #["",""]
                         if not posicion:
                             self.mensajes_de_error.append("Debe de haber 2 coordenadas, el Valor X y el Valor Y")
                             posicion_valido = False
                             break
-                        #[1.1,2.2]
-                        else:
-                            try:
-                                float(posicion)
-                            except:
-                                self.mensajes_de_error.append("El valor de la coordenada debe de ser de tipo FLOAT o INTEGER")
-                                posicion_valido = False
-                                break
                     if posicion_valido:
-                        self.posiciones.append(tuple(map(float,posiciones_validar)))
+                        self.posiciones.append(tuple(map(str,posicion_normal)))
                         #Elimino el parametro ya validado del codigo.
                         codigo_copia = codigo_copia[slice(codigo_copia.find(")")+1,len(codigo_copia))]
                         # print("CODIGO COPIA ACTUALIZADO")
@@ -308,21 +359,15 @@ class Depurador_tikz():
                         break
                 #Solo hay 1 parametro... 
                 #\Circle
-                elif(len(posiciones_validar)==1 and self.figura == "circle"):
-                    try:
-                        int(posiciones_validar)
-                        self.mensajes_de_error.append("Error en la Linea "+str(self.linea_codigo)+" se esperaba una Unidad Metrica valida.")
-                        self.posiciones = []
-                        break
-                    except:
-                        self.posiciones.append(posiciones_validar[0])#"0.8cm"
-                        #Elimino el parametro ya validado del codigo.
-                        codigo_copia = codigo_copia[slice(codigo_copia.find(")")+1,len(codigo_copia))]
+                elif(len(posicion_normal)==1 and "circle" in self.figuras):
+                    self.posiciones.append(posicion_normal[0])#"0.8cm"
+                    #Elimino el parametro ya validado del codigo.
+                    codigo_copia = codigo_copia[slice(codigo_copia.find(")")+1,len(codigo_copia))]
                 else:
-                    for posicion in posiciones_validar:
+                    for posicion in posicion_normal:
                         #Si hay mas o menos de 2 posiciones...
-                        # print("ERROR EN")
-                        # print(posicion)
+                        print("ERROR EN")
+                        print(posicion)
                         if(posicion!=""):
                             self.mensajes_de_error.append("En la Linea "+str(self.linea_codigo)+" se esperaban 2 coordenadas con un valor valido.")
                             break

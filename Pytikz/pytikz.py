@@ -1,5 +1,5 @@
-from .depurador.depurador_tikz import Depurador_tikz 
-from .graficar_tikz.graficar_tikz import Graficar_tikz 
+from .submodules.depurador_tikz import Depurador_tikz
+from .submodules.graficar_tikz import Graficar_tikz
 
 class Pytikz():
 
@@ -8,13 +8,13 @@ class Pytikz():
         self.codigo_tikz_ordenado = codigo_tikz.split("\\")
         print("CODIGO ORIGINAL")
         print(self.codigo_tikz_ordenado)
-        self.identacion(self.codigo_tikz_ordenado)
+        self.indentacion(self.codigo_tikz_ordenado)
         #Se analiza cada codigo si esta escrito correctamente segun la documentacion TikZ.
         self.depurado_codigo = self.depurar_codigo_tikz()
         if(self.depurado_codigo):
             self.dibujar_tikz(self.comandos_tikz,area_de_dibujar)
 
-    def identacion(self,codigo_tikz_ordenado):
+    def indentacion(self,codigo_tikz_ordenado):
         #FASE 1: Se saca las indentaciones del codigo TikZ
         codigo_tikz_ordenado = codigo_tikz_ordenado
         codigo_tikz_ordenado_2 = []
@@ -123,4 +123,4 @@ class Pytikz():
 
     def dibujar_tikz(self,comandos_tikz_validos,area_de_dibujar):
         graficar_tikz = Graficar_tikz(area_de_dibujar)
-        graficar_tikz.graficar(comandos_tikz_validos)
+        graficar_tikz.Graficar(comandos_tikz_validos)

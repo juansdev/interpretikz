@@ -1,0 +1,14 @@
+ESTRUCTURA:
+    - La estructura base sera un Widget BoxLayout.
+    - El unico hijo del Widget base sera un ScrollView (Para cumplir el responsive vertical).
+
+RESPONSIVE:
+    - De manera Vertical no habria responsive alguno. (El ScrollView solucionara los objetos que exceden el espacio de manera vertical del tamaño del celular, para que puedan caber todos de manera Vertical utilizando el deslice de la pantalla).
+    - Si los Objetos no caben de manera Horizontal, se utilizara Responsive para colocarlos segun el anchor del celular.
+
+    WIDTH MEDIA:
+        'XS' = Cuando el tamaño del ancho la pantalla es 250px inferior.
+        'S' = Cuando el tamaño del ancho la pantalla es 500px inferior.
+        'M' = Cuando el tamaño del ancho la pantalla es 1000px inferior.
+        'L' = Cuando el tamaño del ancho la pantalla es 1200px inferior.
+        'XL' = Cuando el tamñao del ancho de la pantalla es 1200px o superior.
