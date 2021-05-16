@@ -1,0 +1,29 @@
+\definecolor{ocre}{RGB}{52,177,201}
+\definecolor{emerald}{HTML}{00A388}
+\definecolor{colmain}{RGB}{30,20,100}
+\definecolor{ColorB}{RGB}{52,177,201}
+\definecolor{ColorA}{RGB}{30,20,100}
+\definecolor{ColorC}{RGB}{102, 0, 0}
+\definecolor{ColorM}{RGB}{155, 85, 12}
+\definecolor{ColorL}{RGB}{255, 128, 0}
+\definecolor{colone}{RGB}{209,220,204}
+\definecolor{coltwo}{RGB}{204,222,210}
+\definecolor{colthree}{RGB}{207,233,232}
+\definecolor{colfour}{RGB}{248,243,214}
+\definecolor{colfive}{RGB}{245,238,197}
+\definecolor{colsix}{RGB}{243,235,179}
+\definecolor{colseven}{RGB}{241,231,163}
+\definecolor{coleight}{RGB}{239,229,151}
+\definecolor{darkblue}{rgb}{0.0, 0.0, 0.30}
+\definecolor{cfffeff}{RGB}{255, 255, 255}
+\definecolor{mygray}{RGB}{208,208,208}
+\definecolor{mymagenta}{RGB}{226,0,116}
+
+\draw[color=ColorA,fill=ColorA,line width = 3pt] (100,100) arc(-60:60:1.4cm);
+\draw[color=ColorA,fill=ColorA,line width = 3pt] (100,100) arc(240:120:1.4cm);
+\draw[color=white,fill=ColorB,line width = 3pt] (100,0) arc(-60:60:1cm);
+\draw[color=white,fill=ColorB,line width = 3pt] (100,0) arc(240:120:1cm);
+\draw[rotate=30,color=white,fill=ColorB,line width = 3pt] (100,0) arc(-60:60:1cm);
+\draw[rotate=30,color=white,fill=ColorB,line width = 3pt] (100,0) arc(240:120:1cm);
+\draw[rotate=-30,color=white,fill=ColorB,line width = 3pt] (100,0) arc(-60:60:1cm);
+\draw[rotate=-30,color=white,fill=ColorB,line width = 3pt] (100,0) arc(240:120:1cm);

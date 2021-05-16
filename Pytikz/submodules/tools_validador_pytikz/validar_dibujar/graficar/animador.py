@@ -1,0 +1,2 @@
+class Animador():
+    pass
