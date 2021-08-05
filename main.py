@@ -1,4 +1,4 @@
-import kivy
+import kivy, os
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
@@ -104,7 +104,7 @@ class MainWid(BoxLayout):
                 self.add_widget(tabletpcwid)
 
 class MainApp(App):
-    title = "PyTikz"
+    title = "InterpreTikZ"
 
     def compilar(self,codigo_tikz):
         #Si esta en Celular...
@@ -125,3 +125,12 @@ class MainApp(App):
 
 if __name__ == "__main__":
     MainApp().run()
+    #Limpiar contenido de la carpeta source
+    folder_parent = "./Pytikz/source/"
+    folder_to_delete = ["animacion","relleno","relleno_lineas_libre","animacion_temp"]
+    list_dir = []
+    for folder in folder_to_delete:
+        list_dir.append(folder_parent+folder)
+    for dir in list_dir:
+        for f in os.listdir(dir):
+            os.remove(os.path.join(dir, f))

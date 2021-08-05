@@ -1,6 +1,34 @@
+import re
+
 class Indentador_tikz():
     def __init__(self,codigo_tikz):
-        self.codigo_tikz_ordenado = codigo_tikz.split("\\")
+        #Todos los Foreach
+        codigo_foreach = re.findall(
+            re.compile(r" *\\foreach+ [\\\w]+ \[?.*?\]?in {.+?} *{\n.*?\n*};",re.DOTALL),
+            codigo_tikz
+        )
+        print(codigo_foreach)
+        codigo_foreach_ordenado = []
+        for foreach in codigo_foreach:
+            codigo_foreach_ordenado.append(foreach.split("\n"))
+            for one_foreach in codigo_foreach_ordenado:
+                for each in one_foreach:
+                    codigo_tikz = codigo_tikz.replace(each,"")
+        #Todo código que no sea Foreach
+        self.codigo_tikz_ordenado = []
+            #Generar un Array por comando separandolos por "\"
+        for codigo in codigo_tikz.split("\\"):
+            if codigo:
+                codigo = re.escape("\\"+codigo)
+                codigo_valido = re.search(r" *"+codigo,codigo_tikz)
+                if codigo_valido:
+                    self.codigo_tikz_ordenado.append(codigo_valido.group())
+        #Añadir código Foreach al listado de codigos.
+        for one_foreach in codigo_foreach_ordenado:
+            for each in one_foreach:
+                self.codigo_tikz_ordenado.append(each)
+        print("self.codigo_tikz_ordenado")
+        print(self.codigo_tikz_ordenado)
         self.codigo_tikz_ordenado_2 = []
         self.indentacion = []
     def indentar(self):
@@ -8,17 +36,26 @@ class Indentador_tikz():
         indice = 0
         for codigo in self.codigo_tikz_ordenado:
             if codigo:
-                self.codigo_tikz_ordenado_2.append(codigo[slice(0,codigo.find("\n") if codigo.find("\n") != -1 else len(codigo))])
-                #Sacar longitud de la indentacion
-                str_inverso = codigo[len(codigo)::-1]
-                if codigo.find("\n") != -1:
-                    slice_object = slice(codigo.find("\n")+1,len(str_inverso)-str_inverso.find(" "))
-                    if indice == 0:
-                        self.indentacion.append(0)    
-                    self.indentacion.append(len(codigo[slice_object]))
+                if(codigo.find("\n") != -1):
+                    codigo_a_agregar = codigo[slice(0,codigo.find("\n"))]
+                    if(codigo_a_agregar):
+                        self.codigo_tikz_ordenado_2.append(codigo_a_agregar)
+                    else: continue
                 else:
-                    if indice == 0:
-                        self.indentacion.append(0)
+                    codigo_a_agregar = codigo[slice(0,len(codigo))]
+                    if(len(codigo_a_agregar)>2):
+                        self.codigo_tikz_ordenado_2.append(codigo_a_agregar)
+                    else: continue
+                #Sacar longitud de la indentacion
+                if codigo.find("\n"):
+                    if(re.search(r"^ ",codigo) and re.search(r"\b\S",codigo)):
+                        self.indentacion.append(len(codigo[
+                            re.search(r"^ ",codigo).start():#Desde el primer espacio
+                            re.search(r"\b\S",codigo).start()-1]#Hasta el primer caracter
+                        ))
+                    else: self.indentacion.append(0)
+                elif indice == 0:
+                    self.indentacion.append(0)
                 indice += 1
         print("CODIGO TIKZ ORIGINAL")
         print(self.codigo_tikz_ordenado_2)

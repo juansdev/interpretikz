@@ -1,16 +1,15 @@
 import numpy as np
-import cv2, imutils
-from kivy.graphics import Rectangle, BindTexture, Color
+import cv2, imutils, copy
+from kivy.graphics import Rectangle, BindTexture, Color, InstructionGroup
 from PIL import Image
-import copy
 
 #Relleno para figuras dibujadas con Lineas.
 class Relleno_lineas_libre():
     
-    def __init__(self,area_dibujar,coordenadas_figura,colores,relleno=True,degradado=False):
+    def __init__(self,area_dibujar,coordenadas_figura,colores,relleno=True,degradado=False,animador=False):
         #SI ES LISTA
         #RGB A BGR
-        if isinstance(colores, tuple):
+        if isinstance(colores, list):
             colores = [colores[2],colores[1],colores[0]]
         #Convertir numeros flotantes a INT.
         coordenadas_figura = [int(coordenada) for coordenada in coordenadas_figura]
@@ -67,11 +66,16 @@ class Relleno_lineas_libre():
             self.img = cv2.flip(img, 1)
             pos_graphic = [float(min_width),float(min_height)]
             size_graphic = [float(self.max_width),float(self.max_height)]
-            #Dibujar rectangulo en "Area de dibujar"
-            with area_dibujar.canvas:
-                Color(1, 1, 1)
+            if not animador:    
+                figura_wid = InstructionGroup()
+                #Dibujar rectangulo en "Area de dibujar"
                 figura_grafico = Rectangle(pos=pos_graphic,size=size_graphic)
-            self.ruta = './Pytikz/source/relleno_lineas_libre/figura_relleno_'+str(figura_grafico.uid)+".png"
+                figura_wid.add(Color(1, 1, 1))
+                # figura_wid.add(figura_grafico)
+                self.ruta = './Pytikz/source/relleno_lineas_libre/figura_relleno_'+str(figura_grafico.uid)+".png"
+            elif animador:
+                figura_grafico = Rectangle()
+                self.ruta = './Pytikz/source/animacion/figura_relleno_'+str(figura_grafico.uid)+".png"
             cv2.imwrite(self.ruta, self.img)
             #Pasar imagen de color blanco a COLOR definido por el usuario...
             if relleno:
@@ -82,20 +86,21 @@ class Relleno_lineas_libre():
                 self.__convertir_a_png()
                 self.__convertir_a_color(colores,degradado=True)
                 self.__convertir_a_png()
-            #Añadir la imagen del degradado o imagen al Rectangulo.
-            with area_dibujar.canvas:
-                BindTexture(source=self.ruta, index=1)
-            # establecer la texture1 para usar la textura en el index 1
-            area_dibujar.canvas['texture1'] = 1
-        
+            if not animador:
+                #Añadir la imagen del degradado o imagen al Rectangulo.
+                figura_wid.add(BindTexture(source=self.ruta, index=1))
+                figura_wid.add(figura_grafico)
+                # establecer la texture1 para usar la textura en el index 1
+                area_dibujar.canvas.add(figura_wid)
+                area_dibujar.canvas['texture1'] = 1
     #Convertir pixeles blanco a X color...
     def __convertir_a_color(self,colores,relleno=False,degradado=False):
         self.img = cv2.imread(self.ruta)
-        def aplicar_relleno():
+        def aplicar_relleno(colores):
             Conv_hsv_Gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
             _, mask = cv2.threshold(Conv_hsv_Gray, 0, 255,cv2.THRESH_BINARY_INV |cv2.THRESH_OTSU)
             indices = np.where(mask==0)#El Mask 0 es ignorar color Negro...
-            self.img[indices[0], indices[1], :] = [color*255 for color in colores]#Convierte pixeles sobrantes (En este seria solo blanco) a rojo..
+            self.img[indices[0], indices[1], :] = [color*255 for color in colores[::-1]]#Convierte pixeles sobrantes (En este seria solo blanco) a rojo..
         def aplicar_degradado(left_color=(),right_color=(),top_color=(),middle_color=(),bottom_color=(),inner_color=(),outer_color=(),ball_color=()): 
             def gradient_3d(start_list, stop_list):
                 result = self.img
@@ -110,8 +115,8 @@ class Relleno_lineas_libre():
             if top_color and bottom_color:
                 gradient_3d([color*255 for color in top_color],[color*255 for color in bottom_color])
         if relleno:
-            aplicar_relleno()
-        else:
+            aplicar_relleno(colores)
+        elif degradado:
             aplicar_degradado(**colores)
 
     def __convertir_a_png(self):

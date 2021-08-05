@@ -2,19 +2,19 @@ from kivy.metrics import pt, cm
 import re
 
 class Validadores():
-    def __init__(self,comando_tikz):
+    def __init__(self,estilos_predeterminados):
         self.tipo_de_linea_validos = ["loosely dashed", "dashed", "densely dashed", "loosely dotted", "dotted", "densely dotted"]
         self.colores_validos = ["red","blue","green","cyan","black","yellow"]
         #Estilos predeterminados
-        self.degradients = {}
-        self.fill = (1,1,1) if comando_tikz == "draw" or comando_tikz == "shade" else (0,0,0) if comando_tikz == "fill" else (0,0,0)
-        self.draw = (0,0,0) if comando_tikz == "draw" or comando_tikz == "shade" else (1,1,1) if comando_tikz == "fill" else (0,0,0)
-        self.tipo_de_linea = ""
-        self.line_width = 1.0
+        self.degradients = estilos_predeterminados["degradients"]
+        self.fill = estilos_predeterminados["fill"]
+        self.draw = estilos_predeterminados["draw"]
+        self.tipo_de_linea = estilos_predeterminados["tipo_de_linea"]
+        self.line_width = estilos_predeterminados["line_width"]
+        self.metrica_validos = estilos_predeterminados["metrica_validos"]
         self.mensajes_de_error = []
 
     def validar_metrica(self,metrica_a_validar):
-        metrica_validos = ["pt","cm"]
         unidad_metrica = re.compile("[a-z]")
         metrica = []
         distanciamiento_metrica = []
@@ -38,7 +38,7 @@ class Validadores():
                 if not self.mensajes_de_error:
                     #Validar unidad de metrica
                     unidad_metrica = "".join(metrica) 
-                    if unidad_metrica in metrica_validos:
+                    if unidad_metrica in self.metrica_validos:
                         valor_metrica = float(metrica_a_validar[:distanciamiento_metrica[0]])
                         if unidad_metrica == "pt":
                             return pt(valor_metrica)

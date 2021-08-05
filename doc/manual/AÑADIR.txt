@@ -1,1 +1,0 @@
-Cada comando de \draw debe de terminar en ";"

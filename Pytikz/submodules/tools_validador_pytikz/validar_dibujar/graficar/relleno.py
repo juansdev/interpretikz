@@ -1,52 +1,137 @@
-from kivy.graphics import Color, BindTexture, Rectangle, Ellipse
+from kivy.core.image import Image
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.graphics import Color, BindTexture, Rectangle, Ellipse, InstructionGroup
 from kivy.graphics.texture import Texture
 
 #Relleno para figuras cerradas (Excluyendo la figura de lineas y bezier).
 class Relleno():
-    def __init__(self,area_dibujar,name_figure,degradado,pos,size,angle_start=0,angle_end=0):
-        with area_dibujar.canvas:
-            Color(1, 1, 1)   
+    def __init__(self,area_dibujar,name_figure,degradado,pos,size,angle_start=0,angle_end=0,animador=False):
+        figura_wid = InstructionGroup()
+        if not animador:
+            figura_wid.add(Color(1, 1, 1))
+        else:
+            wid_img = RelativeLayout(size=size)
+            figura_wid.add(Color(1, 1, 1))
         if name_figure == "rectangle":
-            with area_dibujar.canvas:      
-                # crear la figura (estara en el index 0)
+            if not animador:
                 figura = Rectangle(pos=pos,size=size)
+            else:
+                figura = Rectangle(pos=wid_img.pos,size=wid_img.size)
         elif name_figure == "arc":
-            with area_dibujar.canvas:
+            if not animador:
                 figura = Ellipse(pos=pos,size=size,angle_start=angle_start,angle_end=angle_end)
+            else:
+                figura = Ellipse(pos=wid_img.pos,size=wid_img.size,angle_start=angle_start,angle_end=angle_end)
         elif name_figure == "circle":
-            with area_dibujar.canvas:
+            if not animador:
                 figura = Ellipse(pos=pos,size=size)
-        id_figura = figura.uid
+            else:
+                figura = Ellipse(pos=wid_img.pos,size=wid_img.size)
+        id_figura = figura_wid.uid
         url_texture_degradado = self.__aplicar_degradado(id_figura,**degradado)
-        with area_dibujar.canvas:
+        if not animador:
             # aqui, nosotros estamos enlazando una textura personalizada en el index 1
             # esto seria usado como texture1 en el shader.
             # Los nombres de los archivos son engañosos: no corresponden al
             # index aqui o en el shader.
-            BindTexture(source=url_texture_degradado, index=1)
-        # establecer la texture1 para usar la textura en el index 1
-        area_dibujar.canvas['texture1'] = 1
-
+            # establecer la texture1 para usar la textura en el index 1
+            figura_wid.add(BindTexture(source=url_texture_degradado, index=1))
+            figura_wid.add(figura)
+            area_dibujar.canvas.add(figura_wid)
+            area_dibujar.canvas['texture1'] = 1
+        else:
+            texture = Image(url_texture_degradado).texture
+            figura.texture = texture
+            figura_wid.add(figura)
+            #Dibujar canvas...
+            wid_img.canvas.add(figura_wid)
+            ruta = './Pytikz/source/animacion/figura_cerrado_'+str(figura.uid)+".png"
+            wid_img.export_to_png(ruta)
+                
     def __aplicar_degradado(self,id_figura,left_color=(),right_color=(),top_color=(),middle_color=(),bottom_color=(),inner_color=(),outer_color=(),ball_color=()):
         #left color, right color, top color, middle color, bottom color, inner color, outer color, ball color
-        if top_color and bottom_color:
-            color_origen = bottom_color
-            color_destino = top_color
-            red_origen = color_origen[0]*255
-            green_origen = color_origen[1]*255
-            blue_origen = color_origen[2]*255
-            red_destino = color_destino[0]*255
-            green_destino = color_destino[1]*255
-            blue_destino = color_destino[2]*255
-            c1 = [red_origen, green_origen, blue_origen, 255]
-            c1_trans = [red_origen, green_origen, blue_origen, 128]
-            c2_trans = [red_destino, green_destino, blue_destino, 128]
-            c2 = [red_destino, green_destino, blue_destino, 255]
+        if len(right_color) and len(left_color) and not len(middle_color):
+            #Colores Origen - Destino
+            color_origen = right_color
+            color_destino = left_color
+            #Color Origen
+            c1 = [color*255 for color in color_origen]+[255]
+            c1_trans = [color*255 for color in color_origen]+[128]
+            #Color Destino
+            c2_trans = [color*255 for color in color_destino]+[128]
+            c2 = [color*255 for color in color_destino]+[255]
+            #Crear degradiente
             degradient = c1+c1_trans+c2_trans+c2
             degradient = [int(degra) for degra in degradient]
+            #Textura de 4 columnas, 1 fila.
+            texture = Texture.create(size=(4,1), colorfmt='rgba')
+        elif len(right_color) and len(left_color) and len(middle_color):
+            #Colores Origen - Destino
+            color_origen = right_color
+            color_intermedio = middle_color
+            color_destino = left_color
+            #Color Origen
+            c1 = [color*255 for color in color_origen]+[255]
+            c1_trans = [color*255 for color in color_origen]+[128]
+            #Color Intermediario
+            c2_trans = [color*255 for color in color_intermedio]+[128]
+            c2 = [color*255 for color in color_intermedio]+[255]
+            #Color Destino
+            c3_trans = [color*255 for color in color_destino]+[128]
+            c3 = [color*255 for color in color_destino]+[255]
+            #Crear degradiente
+            degradient = c1+c1_trans+c2_trans+c2+c2_trans+c3_trans+c3
+            degradient = [int(degra) for degra in degradient]
+            #Textura de 7 columnas, 1 fila.
+            texture = Texture.create(size=(7,1), colorfmt='rgba')
+        elif len(top_color) and len(bottom_color) and not len(middle_color):
+            #Colores Origen - Destino
+            color_origen = bottom_color
+            color_destino = top_color
+            #Color Oriden
+            c1 = [color*255 for color in color_origen]+[255]
+            c1_trans = [color*255 for color in color_origen]+[128]
+            #Color Destino
+            c2_trans = [color*255 for color in color_destino]+[128]
+            c2 = [color*255 for color in color_destino]+[255]
+            #Crear degradiente
+            fila_1 = c1+c1+c1+c1
+            fila_2 = c1_trans+c1_trans+c1_trans+c1_trans
+            fila_3 = c2_trans+c2_trans+c2_trans+c2_trans
+            fila_4 = c2+c2+c2+c2
+            degradient = fila_1+fila_2+fila_3+fila_4
+            degradient = [int(degra) for degra in degradient]
+            #Textura de 4 columnas, 4 fila.
+            texture = Texture.create(size=(4,4), colorfmt='rgba')
+        elif len(top_color) and len(bottom_color) and len(middle_color):
+            #Colores Origen - Destino
+            color_origen = bottom_color
+            color_intermedio = middle_color
+            color_destino = top_color
+            #Color Origen
+            c1 = [color*255 for color in color_origen]+[255]
+            c1_trans = [color*255 for color in color_origen]+[128]
+            #Color Intermediario
+            c2_trans = [color*255 for color in color_intermedio]+[128]
+            c2 = [color*255 for color in color_intermedio]+[255]
+            #Color Destino
+            c3_trans = [color*255 for color in color_destino]+[128]
+            c3 = [color*255 for color in color_destino]+[255]
+            #Crear degradiente
+            fila_1 = c1+c1+c1+c1+c1+c1+c1
+            fila_2 = c1_trans+c1_trans+c1_trans+c1_trans+c1_trans+c1_trans+c1_trans
+            fila_3 = c2_trans+c2_trans+c2_trans+c2_trans+c2_trans+c2_trans+c2_trans
+            fila_4 = c2+c2+c2+c2+c2+c2+c2
+            fila_5 = c2_trans+c2_trans+c2_trans+c2_trans+c2_trans+c2_trans+c2_trans
+            fila_6 = c3_trans+c3_trans+c3_trans+c3_trans+c3_trans+c3_trans+c3_trans
+            fila_7 = c3+c3+c3+c3+c3+c3+c3
+            degradient = fila_1+fila_2+fila_3+fila_4+fila_5+fila_6+fila_7
+            degradient = [int(degra) for degra in degradient]
+            #Textura de 7 columnas, 7 fila.
+            texture = Texture.create(size=(7,7), colorfmt='rgba')
         else:
             degradient = 0
-        texture = Texture.create(size=(4,1), colorfmt='rgba')
+            texture = Texture.create(size=(4,1), colorfmt='rgba')
         texture.blit_buffer(bytes(degradient),colorfmt='rgba', bufferfmt='ubyte')
         url_texture = "./Pytikz/source/relleno/figura_relleno_"+str(id_figura)+".png"
         texture.save(url_texture)
