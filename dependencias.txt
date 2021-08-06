@@ -1,0 +1,28 @@
+1. python -m pip install --upgrade pip setuptools virtualenv
+2. python -m virtualenv kivy_venv
+3. Siempre utilizar este comando cada vez que creas un terminal: 
+    - kivy_venv\Scripts\activate
+
+- Kivy V2.0.0
+python -m pip install kivy==2.0.0
+
+- Numpy 1.21.1
+pip install numpy==1.21.1
+
+- OpenCV Python 4.5.3.56
+pip install opencv-python==4.5.3.56
+
+- imutils 0.5.4
+pip install imutils==0.5.4
+
+- Pillow 8.3.1
+pip install Pillow==8.3.1
+
+- MoviePy 1.0.3
+pip install moviepy==1.0.3
+
+- KivyMD 0.104.2
+pip install kivymd==0.104.2
+
+- Pytz 2021.1 
+pip install pytz==2021.1
