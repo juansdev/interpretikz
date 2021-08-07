@@ -72,13 +72,13 @@ class ConexionBD():
     def __insertar_datos_por_defecto(self,cursor,con):
         cursor.execute(
             """
-            INSERT INTO imagenes_de_fondo (ruta) VALUES ("media/fondo_de_imagenes/Mobil.jpg");
+            INSERT INTO imagenes_de_fondo (ruta) VALUES ("media/fondo_de_imagenes/Fondo_claro.jpg");
             """
         )
         con.commit()#Guardar cambios en la BD
         cursor.execute(
             """
-            INSERT INTO imagenes_de_fondo (ruta) VALUES ("media/fondo_de_imagenes/PC.jpg");
+            INSERT INTO imagenes_de_fondo (ruta) VALUES ("media/fondo_de_imagenes/Fondo_oscuro.jpg");
             """
         )
         con.commit()#Guardar cambios en la BD

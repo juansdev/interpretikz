@@ -1,0 +1,9 @@
+#Archivos
+#Ignorar todos las imagenes creadas por la APP
+/*.jpg
+/*.gif
+source/**/*.png
+source/**/*.jpg
+#Carpetas
+__pycache__
+test

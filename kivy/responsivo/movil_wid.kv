@@ -2,32 +2,20 @@
     MDGridLayout:
         cols: 1
         height: self.minimum_height
-        rows_minimum: {0:root.height*.1, 1:root.height*.4, 2:root.height*.03, 3:root.height*.07, 4:root.height*.4, 5:root.height*.03, 6:root.height*.05, 7:root.height*.03, 8:root.height*.05, 9:root.height*.03, 10:root.height*.07}
+        rows_minimum: {0:root.height*.1, 1:root.height*.8, 2:root.height*.03, 3:root.height*.07, 4:root.height*.7, 5:root.height*.03, 6:root.height*.07, 7:root.height*.07, 8:root.height*.03, 9:root.height*.05}
         size_hint_y: None
         spacing: [0,15]
+        
         #SUPERIOR - 0
-        MDBoxLayout:
+        MDToolbar:
             size_hint_y: None
-            height: root.height*.1
-            #Logo
-            Image:
-                size_hint_x: .1
-                source: 'media/iconos/logo.png'
+            height: dp(root.height*.1)
+            md_bg_color: app.theme_cls.accent_dark
             #Titulo
-            Label:
-                size_hint_x: .7
-                markup: True
-                font_name: "arial"
-                halign: "center"
-                outline_color: [1,1,1,1]
-                outline_width: 5
-                text: "[b][color=FF0000][size=40px]InterpreTikZ[/size][/color][/b]"
-            #Cambiar imagen de fondo
-            MDBoxLayout:
-                size_hint_x: .2
-                MDIconButton:
-                    icon: "media/iconos/image.png"
-                    on_release: app.listar_imagenes_popup()
+            title: "InterpreTikZ"
+            anchor_title: "center"
+            #Acceder a herramientas
+            left_action_items: [["folder-multiple-image", app.listar_imagenes_popup],["invert-colors", app.alternar_estilos]]
 
         #AREA DE DIBUJADO - 1
         MDBoxLayout:
@@ -39,13 +27,11 @@
                     size: self.size
                     pos: self.pos
         #Generar comandos. - 2
-        Label:
-            markup: True
-            font_name: "arial"
+        MDLabel:
+            font_name: "media/fonts/OpenSans-ExtraBold"
+            font_style: "H6"
             halign: "center"
-            outline_color: [.2196078431372549,.2196078431372549,.2196078431372549,1]
-            outline_width: 2
-            text: "[b][color=ffffff][size=18px]Generar comandos[/size][/color][/b]"
+            text: "Generar comandos"
         #Barra acceso rapido superior. -3
         ScrollView:
             MDGridLayout:
@@ -55,72 +41,64 @@
                 width: self.minimum_width
                 spacing: [5,0]
         #AREA DE CODIGO - 4
-        MDBoxLayout:
-            # size_hint_y: .3
-            canvas:
-                Color:
-                    rgb: 1,1,1#Fondo blanco
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-            MDTextFieldRect:
-                id: codigo_tikz
-                hint_text: "Escribir aqui comandos de TikZ..."
+        MDTextFieldRect:
+            id: codigo_tikz
+            hint_text: "Escribir aqui comandos de TikZ..."
         #Dibujos guardados. - 5
-        Label:
-            markup: True
-            font_name: "arial"
+        MDLabel:
+            font_name: "media/fonts/OpenSans-ExtraBold"
+            font_style: "H6"
             halign: "center"
-            outline_color: [.2196078431372549,.2196078431372549,.2196078431372549,1]
-            outline_width: 2
-            text: "[b][color=ffffff][size=18px]Dibujos guardados[/size][/color][/b]"
+            text: "Dibujos guardados"
         #Barra acceso rapido inferior. - 6
         ScrollView:
             MDGridLayout:
                 id: acceso_rapido_bot
                 size_hint_x: None
                 rows: 1
-                col_default_width: root.width*0.30#30% del ancho total de ventana.
+                col_default_width: root.width*0.45#45% del ancho total de ventana.
                 width: self.minimum_width
                 spacing: [15,0]
-        
-        #Guardar un dibujo con todos los comandos.
-        #Label. - 7
-        Label:
-            size_hint_x: 1
-            markup: True
-            font_name: "arial"
-            halign: "center"
-            outline_color: [.2196078431372549,.2196078431372549,.2196078431372549,1]
-            outline_width: 2
-            text: "[b][color=ffffff][size=18px]Nombre dibujo[/size][/color][/b]"
-        
-        #Input. - 8
+        #Guardar un dibujo con todos los comandos.        
+        #Input. - 7
         MDTextFieldRect:
+            font_name: "media/fonts/OpenSans-Regular"
+            hint_text: "Nombre del dibujo"
+            mode: "rectangle"
             id: nombre_dibujo
-            size_hint_x: 1
-
-        #Guardar. - 9
+        #Guardar. - 8
         MDRaisedButton:
-            size_hint_x: 1
-            font_name: "arial"
-            theme_text_color: "Primary"
-            font_style: "Button"
+            size_hint: [1, None]
+            height: dp(35)
+            font_name: "media/fonts/OpenSans-SemiBold"
+            font_style: "H6"
             text: "Guardar"
-            md_bg_color: [1, 1, 0,1]
+            md_bg_color: [1, 1, 0, 1]
             on_press: app.guardar_dibujo(nombre_dibujo.text,codigo_tikz.text)
-        
-        #BOTON COMPILAR - 10
+        #BOTON COMPILAR - 9
         MDRaisedButton:
             size_hint_x: 1
-            font_name: "arial"
+            font_name: "media/fonts/OpenSans-Bold"
             font_style: "H5"
             halign: "center"
             text: "RECOMPILAR"
-            md_bg_color: [.2274509803921569,.8470588235294118,.1019607843137255,1]
+            md_bg_color: app.theme_cls.primary_dark
             on_press: app.compilar(codigo_tikz.text)
             canvas:
                 Rectangle:
                     source:"media/iconos/reload.png"
                     pos: [self.center[0]-115,self.center[1]-15]
                     size: 30,30
+        #PIE DE PAGINA.
+        BoxLayout:
+            size_hint_x: 1
+            size_hint_y: None
+            height: dp(root.height*.20)
+            MDBottomAppBar:
+                MDToolbar:
+                    id: bottomAppBar
+                    title: "Todos los derechos reservados ©"
+                    icon: "media/iconos/logo.png"
+                    type: "bottom"
+                    mode: "end"
+                    on_action_button: app.mostrar_informacion()

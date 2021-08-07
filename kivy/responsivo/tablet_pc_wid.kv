@@ -10,7 +10,7 @@
         title: "InterpreTikZ"
         anchor_title: "center"
         #Acceder a herramientas
-        left_action_items: [["folder-multiple-image", app.listar_imagenes_popup],["invert-colors", app.invertir_estilo]]
+        left_action_items: [["folder-multiple-image", app.listar_imagenes_popup],["invert-colors", app.alternar_estilos]]
     #CUERPO APP
     MDGridLayout:
         size_hint_y: None
@@ -30,9 +30,8 @@
                     spacing: [0,20]
                     #Generar comandos. - 0
                     MDLabel:
-                        font_name: "media/fonts/OpenSans-SemiBold"
+                        font_name: "media/fonts/OpenSans-ExtraBold"
                         font_style: "H6"
-                        theme_text_color: "Secondary"
                         halign: "center"
                         text: "Generar comandos"
                     #Barra acceso rapido superior. - 1
@@ -49,9 +48,8 @@
                         hint_text: "Escribir aqui comandos de TikZ..."
                     #Dibujos guardados. - 3
                     MDLabel:
-                        font_name: "media/fonts/OpenSans-SemiBold"
+                        font_name: "media/fonts/OpenSans-ExtraBold"
                         font_style: "H6"
-                        theme_text_color: "Secondary"
                         halign: "center"
                         text: "Dibujos guardados"
                     #Barra acceso rapido inferior. - 4
@@ -60,22 +58,22 @@
                             id: acceso_rapido_bot
                             size_hint_x: None
                             rows: 1
-                            col_default_width: root.width*0.20#15% del alto total de ventana.
+                            col_default_width: root.width*0.30#30% del alto total de ventana.
                             width: self.minimum_width
                             spacing: [10,0]
                     #Guardar un dibujo con todos los comandos.
                     #Input. - 5
-                    MDTextField:
+                    MDTextFieldRect:
+                        font_name: "media/fonts/OpenSans-Regular"
                         hint_text: "Nombre del dibujo"
                         mode: "rectangle"
                         id: nombre_dibujo
                     #Boton. - 6
                     MDRaisedButton:
-                        size_hint: [1, None]
-                        height: dp(35)
+                        size_hint: [1, 1]
                         font_name: "media/fonts/OpenSans-SemiBold"
-                        font_style: "H6"
-                        text: "Guardar"
+                        font_style: "Button"
+                        text: "Guardar dibujo"
                         md_bg_color: [1, 1, 0, 1]
                         on_press: app.guardar_dibujo(nombre_dibujo.text,codigo_tikz.text)
                     #BOTON COMPILAR - 7
@@ -110,7 +108,7 @@
         MDBottomAppBar:
             MDToolbar:
                 id: bottomAppBar
-                title: "Desarrollado por Juan Serrano"
+                title: "Todos los derechos reservados ©"
                 icon: "media/iconos/logo.png"
                 type: "bottom"
                 mode: "end"

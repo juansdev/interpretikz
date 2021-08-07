@@ -3,33 +3,33 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.graphics import Color, BindTexture, Rectangle, Ellipse, InstructionGroup
 from kivy.graphics.texture import Texture
 
-#Relleno para figuras cerradas (Excluyendo la figura de lineas y bezier).
+#Relleno con degradado para figuras cerradas (Excluyendo la figura de lineas(Line) y bezier).
 class Relleno():
-    def __init__(self,area_dibujar,name_figure,degradado,pos,size,angle_start=0,angle_end=0,animador=False):
+    def __init__(self,area_dibujar,name_figure,degradado,pos,size,angle_start=0,angle_end=0,habilitado_generar_figura_en_formato=False):
         figura_wid = InstructionGroup()
-        if not animador:
+        if not habilitado_generar_figura_en_formato:
             figura_wid.add(Color(1, 1, 1))
         else:
             wid_img = RelativeLayout(size=size)
             figura_wid.add(Color(1, 1, 1))
         if name_figure == "rectangle":
-            if not animador:
+            if not habilitado_generar_figura_en_formato:
                 figura = Rectangle(pos=pos,size=size)
             else:
                 figura = Rectangle(pos=wid_img.pos,size=wid_img.size)
         elif name_figure == "arc":
-            if not animador:
+            if not habilitado_generar_figura_en_formato:
                 figura = Ellipse(pos=pos,size=size,angle_start=angle_start,angle_end=angle_end)
             else:
                 figura = Ellipse(pos=wid_img.pos,size=wid_img.size,angle_start=angle_start,angle_end=angle_end)
         elif name_figure == "circle":
-            if not animador:
+            if not habilitado_generar_figura_en_formato:
                 figura = Ellipse(pos=pos,size=size)
             else:
                 figura = Ellipse(pos=wid_img.pos,size=wid_img.size)
         id_figura = figura_wid.uid
         url_texture_degradado = self.__aplicar_degradado(id_figura,**degradado)
-        if not animador:
+        if not habilitado_generar_figura_en_formato:
             # aqui, nosotros estamos enlazando una textura personalizada en el index 1
             # esto seria usado como texture1 en el shader.
             # Los nombres de los archivos son engañosos: no corresponden al

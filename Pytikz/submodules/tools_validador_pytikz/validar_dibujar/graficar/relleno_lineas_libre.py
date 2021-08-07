@@ -3,10 +3,10 @@ import cv2, imutils, copy
 from kivy.graphics import Rectangle, BindTexture, Color, InstructionGroup
 from PIL import Image
 
-#Relleno para figuras dibujadas con Lineas.
-class Relleno_lineas_libre():
+#Relleno con o sin degradado para figuras dibujadas con Lineas. (Line)
+class RellenoLineasLibre():
     
-    def __init__(self,area_dibujar,coordenadas_figura,colores,relleno=True,degradado=False,animador=False):
+    def __init__(self,area_dibujar,coordenadas_figura,colores,relleno=True,degradado=False,habilitado_generar_figura_en_formato=False):
         #SI ES LISTA
         #RGB A BGR
         if isinstance(colores, list):
@@ -66,14 +66,14 @@ class Relleno_lineas_libre():
             self.img = cv2.flip(img, 1)
             pos_graphic = [float(min_width),float(min_height)]
             size_graphic = [float(self.max_width),float(self.max_height)]
-            if not animador:    
+            if not habilitado_generar_figura_en_formato:    
                 figura_wid = InstructionGroup()
                 #Dibujar rectangulo en "Area de dibujar"
                 figura_grafico = Rectangle(pos=pos_graphic,size=size_graphic)
                 figura_wid.add(Color(1, 1, 1))
                 # figura_wid.add(figura_grafico)
                 self.ruta = './Pytikz/source/relleno_lineas_libre/figura_relleno_'+str(figura_grafico.uid)+".png"
-            elif animador:
+            elif habilitado_generar_figura_en_formato:
                 figura_grafico = Rectangle()
                 self.ruta = './Pytikz/source/animacion/figura_relleno_'+str(figura_grafico.uid)+".png"
             cv2.imwrite(self.ruta, self.img)
@@ -86,7 +86,7 @@ class Relleno_lineas_libre():
                 self.__convertir_a_png()
                 self.__convertir_a_color(colores,degradado=True)
                 self.__convertir_a_png()
-            if not animador:
+            if not habilitado_generar_figura_en_formato:
                 #Añadir la imagen del degradado o imagen al Rectangulo.
                 figura_wid.add(BindTexture(source=self.ruta, index=1))
                 figura_wid.add(figura_grafico)

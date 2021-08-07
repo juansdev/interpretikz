@@ -75,14 +75,14 @@ area_de_dibujar_mobil = AreaDeDibujo()
 area_de_dibujar_pc_tablet = AreaDeDibujo()
 
 generar_comandos_predeterminados = {
+    "draw(Linea)":"\n"+r"\draw (x1,y1) -- (x2,y2);",
+    "draw(Rectangulo)":"\n"+r"\draw (x1,y1) rectangle (x2, y2);",
+    "draw(Circulo)":"\n"+r"\draw (x1,y1) circle (radio);",
+    "draw(Arco)":"\n"+r"\draw (x1,y1) arc (desde_angulo:hasta_angulo:radio);",
+    "draw(Bezier)":"\n"+r"\draw (x1,y1) .. controls (x2,y2) and (x3,y3);",
     "tikzset(Sin argumentos)":"\n"+r"\tikzset{nombre_estilo global/.style = {}}",
     "tikzset(Con argumentos)":"\n"+r"\tikzset{nombre_estilo global/.style n args = {} = {}, estilo global/.default = {}}",
     "definecolor":"\n"+r"\definecolor{nombre_color}{tipo_color}{codigo_color}",
-    "draw(Rectangulo)":"\n"+r"\draw[] (x1,y1) rectangle (x2, y2);",
-    "draw(Circulo)":"\n"+r"\draw[] (x1,y1) circle (radio);",
-    "draw(Arco)":"\n"+r"\draw[] (x1,y1) arc (desde_angulo:hasta_angulo:radio);",
-    "draw(Bezier)":"\n"+r"\draw (x1,y1) .. controls (x2,y2) and (x3,y3);",
-    "draw(Linea)":"\n"+r"\draw[] (x1,y1) -- (x2,y2);",
     "newcommand":"\n"+r"""
 \newcommand{nombre_comando}[1][cantidad_parametro]{
     
@@ -90,7 +90,11 @@ generar_comandos_predeterminados = {
     "animarPytikz":r"""
 \animarPytikz{
 
-}"""
+}""",
+    "guardarPytikz":r"""\guardarPytikz{
+
+}
+    """
 }
 
 #Funcion utilizada en la clase MobilWid y TabletPcWid
@@ -145,11 +149,11 @@ class ListarImagenesWid(MDBoxLayout):
             id = fila[0]
             ruta = fila[1]
             nombre_de_archivo_con_extension = os.path.basename(ruta)
-            filename,_ = os.path.splitext(nombre_de_archivo_con_extension)
-            text_wid = "[size=26]"+filename+"[/size]\n[size=14]"+nombre_de_archivo_con_extension+"[/size]"
-            smartTitleWithLabel = SmartTileWithLabel(source=ruta,text=text_wid, box_color=[0,0,0,0],on_press=partial(self.fondo_seleccionado,id))
+            nombre_del_archivo,_ = os.path.splitext(nombre_de_archivo_con_extension)
+            texto = "[size=26]"+nombre_del_archivo+"[/size]\n[size=14]"+nombre_de_archivo_con_extension+"[/size]"
+            smart_title_with_label = SmartTileWithLabel(source=ruta,text=texto, box_color=[0,0,0,0],on_press=partial(self.fondo_seleccionado,id))
             #Agregar botones actualizados al acceso rapido
-            self.ids["lista_imagenes"].add_widget(smartTitleWithLabel)
+            self.ids["lista_imagenes"].add_widget(smart_title_with_label)
 
     def agregar_fondo(self,ruta_imagen):
         arr_datos = [ruta_imagen]
@@ -169,7 +173,7 @@ class ListarImagenesWid(MDBoxLayout):
         self.main_wid.canvas.before.clear()
         with self.main_wid.canvas.before:
             Rectangle(source=ruta,size=self.main_wid.size,pos=self.main_wid.pos)
-        self.cerrar_dialog()
+        self.cerrar_md_dialog()
         self.main_wid.imagen_de_fondo_usado_recientemente = ruta 
 
     def eliminar_fondo(self,id,instance):
@@ -178,10 +182,10 @@ class ListarImagenesWid(MDBoxLayout):
         if operacion_valida:
             #MOSTRAR DATOS ACTUALIZADOS
             self.listar_fondos()
-        self.cerrar_dialog()
+        self.cerrar_md_dialog()
 
-    def cerrar_dialog(self,*args):
-        self.dialog.dismiss()
+    def cerrar_md_dialog(self,*args):
+        self.md_dialog.dismiss()
 
     def fondo_seleccionado(self,id,instance):
         ruta = instance.source
@@ -190,7 +194,7 @@ class ListarImagenesWid(MDBoxLayout):
         #Agregar los comportamientos correspondientes
         btn_seleccionar_imagen.bind(on_press=partial(self.seleccionar_fondo,id,ruta))
         btn_eliminar_imagen.bind(on_press=partial(self.eliminar_fondo,id))
-        self.dialog = MDDialog(
+        self.md_dialog = MDDialog(
             title="¿Que quieres hacer con esta imagen?",
             text="Si decides eliminar la imagen, se eliminara para siempre de la base de datos, no se podra recuperar.",
             radius=[20, 7, 20, 7],
@@ -199,32 +203,34 @@ class ListarImagenesWid(MDBoxLayout):
                 btn_seleccionar_imagen
             ],
         )
-        self.dialog.open()
+        self.md_dialog.open()
 
 #Funcion utilizada en la clase MainWid y MainApp
-def eliminar_dibujo(id,app,mobil_wid,tablet_pc_wid,instance):
-    btn_eliminar_dibujo = MDFlatButton(text="Eliminar dibujo", text_color=[0,0,0,1])
-    btn_cancelar = MDRaisedButton(text="Cancelar", text_color=[0,0,0,1])
-    dialog = MDDialog(
-        title="¿Seguro que quieres eliminar este dibujo?",
-        text="Si decides eliminar el dibujo, se eliminara para siempre de la base de datos, no se podra recuperar.",
+def eliminar_dibujo(id,nombre_dibujo,app,mobil_wid,tablet_pc_wid,instance):
+    btn_eliminar_dibujo = MDFlatButton(text="Eliminar el dibujo", text_color=[0,0,0,1])
+    btn_salir = MDRaisedButton(text="Cancelar", text_color=[0,0,0,1])
+    md_dialog = MDDialog(
+        title="¿Seguro que quieres eliminar el dibujo "+nombre_dibujo+"?",
+        text="Si decides eliminar el dibujo "+nombre_dibujo+", se eliminara para siempre de la base de datos, no se podra recuperar.",
         radius=[20, 7, 20, 7],
         buttons=[
             btn_eliminar_dibujo,
-            btn_cancelar
+            btn_salir
         ]
     )
     #Agregar los comportamientos correspondientes
-    def cancelar(dialog,*args):
-        dialog.dismiss()
-    def eliminar(id,dialog,instance):
+    def cerrar_md_dialog(md_dialog,*args):
+        md_dialog.dismiss()
+    
+    def eliminar(id,md_dialog,instance):
         conexion_bd.api_restful("ELIMINAR","dibujos_usuario",[id])
         datos = conexion_bd.api_restful("SELECCIONAR","dibujos_usuario")
         listar_botones_dibujo(datos,app,mobil_wid,tablet_pc_wid)
-        cancelar(dialog)
-    btn_cancelar.bind(on_press=partial(cancelar,dialog))
-    btn_eliminar_dibujo.bind(on_press=partial(eliminar,id,dialog))
-    dialog.open()
+        cerrar_md_dialog(md_dialog)
+    
+    btn_salir.bind(on_press=partial(cerrar_md_dialog,md_dialog))
+    btn_eliminar_dibujo.bind(on_press=partial(eliminar,id,md_dialog))
+    md_dialog.open()
 
 def listar_botones_dibujo(conjunto_de_datos,app,mobil_wid,tablet_pc_wid):
     #Eliminar los botones anteriores
@@ -250,7 +256,7 @@ def listar_botones_dibujo(conjunto_de_datos,app,mobil_wid,tablet_pc_wid):
             #Comportamiento agregar comandos al input de escribir codigo tikz
             lista_dibujo.bind(on_press=partial(generar_codigo,comandos_dibujo,tablet_pc_wid,mobil_wid))
             #Comportamiento eliminar dibujo segun id de la BD
-            icon_eliminar_dibujo.bind(on_press=partial(eliminar_dibujo,id,app,mobil_wid,tablet_pc_wid))
+            icon_eliminar_dibujo.bind(on_press=partial(eliminar_dibujo,id,nombre_dibujo,app,mobil_wid,tablet_pc_wid))
             #Agregar botones hijos al box padre
             lista_dibujo.add_widget(icon_eliminar_dibujo)
             #Agregar botones actualizados al acceso rapido
@@ -294,7 +300,7 @@ class MainWid(MDBoxLayout):
         self.update()
 
     def responsivo(self, win, size):
-        width, height = size
+        width, _ = size
         media_nuevo = (
             'XS' if width < 250 else
             'S' if width < 500 else
@@ -327,7 +333,7 @@ class MainApp(MDApp):
         #Estilos
         self.theme_cls.primary_palette = "Green"
         self.theme_cls.accent_palette = "Green"
-        self.estilos = self.seleccionar_estilo()
+        self.estilos = self.__seleccionar_estilo()
         self.estilo_usado_recientemente = self.estilos[0]
         self.theme_cls.theme_style = deepcopy(self.estilo_usado_recientemente)
         #Instancia de clases Widgets hijas
@@ -339,7 +345,8 @@ class MainApp(MDApp):
         self.explorador = None
         Window.bind(on_keyboard=self.eventos)
 
-    def seleccionar_estilo(self):
+    #Funciones internas de la clase
+    def __seleccionar_estilo(self):
         datos = conexion_bd.api_restful("SELECCIONAR","estilos")
         estilo_usado_recientemente = datos[0][1]
         id_light = datos[0][0]
@@ -347,48 +354,73 @@ class MainApp(MDApp):
         return [estilo_usado_recientemente,id_light,id_dark]
 
     #Funciones utilizados por botones de la GUI
-    def invertir_estilo(self,*arg):
-        #Actualizar fecha del uso de estilo en la BD
-        utc_ahora = datetime.utcnow().replace(tzinfo=pytz.utc)
-        utc_formateado = datetime.strftime(utc_ahora,"%Y-%m-%d %H:%M:%S")
+    def alternar_estilos(self,*arg):
+        #Seleccionar el estilo a cambiar
         if self.estilo_usado_recientemente == "Dark":
-            self.estilo_usado_recientemente = "Light"
-            mensaje_estilo_seleccionado = "Modo claro"
-            mensaje_fondo = "Claro"
+            #Actual
+            mensaje_estilo_actual = "Modo oscuro"
+            #A cambiar
+            estilo_a_cambiar = "Light"
+            mensaje_estilo_a_cambiar = "Modo claro"
+            mensaje_fondo_recomendado = "Claro"
             id = self.estilos[1]
         else:
-            self.estilo_usado_recientemente = "Dark"
-            mensaje_estilo_seleccionado = "Modo oscuro"
-            mensaje_fondo = "Oscuro"
+            #Actual
+            mensaje_estilo_actual = "Modo claro"
+            #A cambiar
+            estilo_a_cambiar = "Dark"
+            mensaje_estilo_a_cambiar = "Modo oscuro"
+            mensaje_fondo_recomendado = "Oscuro"
             id = self.estilos[2]
-        arr_datos = [id,self.estilo_usado_recientemente,utc_formateado]
-        conexion_bd.api_restful("ACTUALIZAR","estilos",arr_datos)
+        #Estilos a cambiar
+        #Actualizar fecha del uso de estilo en la BD
+        def aplicar_cambios(id,estilo_a_cambiar,md_dialog,instance):
+            #Actualizar variable local
+            self.estilo_usado_recientemente = estilo_a_cambiar
+            self.estilo_usado_recientemente = estilo_a_cambiar
+            #Actualizar fecha del uso de estilo en la BD
+            utc_ahora = datetime.utcnow().replace(tzinfo=pytz.utc)
+            utc_formateado = datetime.strftime(utc_ahora,"%Y-%m-%d %H:%M:%S")
+            arr_datos = [id,estilo_a_cambiar,utc_formateado]
+            conexion_bd.api_restful("ACTUALIZAR","estilos",arr_datos)
+            #Cerrar dialog actual
+            self.cerrar_md_dialog(md_dialog)
+            #Abrir dialog informativo de cambio
+            md_dialog = MDDialog(
+                title="Reinicia la aplicacion para efectuar los cambios",
+                radius=[20, 7, 20, 7]
+            )
+            md_dialog.open()
         #Informar al usuario sobre el cambio de estilo en Dialog
+        btn_aplicar = MDRaisedButton(text="Cambiar al "+mensaje_estilo_a_cambiar, text_color=[0,0,0,1])
         btn_salir = MDRaisedButton(text="Salir", text_color=[0,0,0,1])
-        dialog = MDDialog(
-            title="Reinicia la aplicacion para aplicar los cambios de estilo",
-            text="El estilo seleccionado fue: "+mensaje_estilo_seleccionado+".\nEs recomendado utilizarlo cuando el fondo es "+mensaje_fondo+".",
+        #Reinicia la aplicacion para aplicar los cambios de estilo
+        md_dialog = MDDialog(
+            title="¿Quieres cambiar el estilo de la aplicacion?",
+            text="Estilo actual: "+mensaje_estilo_actual+".\nEstilo a cambiar: "+mensaje_estilo_a_cambiar+".\nPara este estilo es recomendable utilizarlo junto a un fondo "+mensaje_fondo_recomendado+".",
             radius=[20, 7, 20, 7],
             buttons=[
+                btn_aplicar,
                 btn_salir
             ]
         )
         #Agregar los comportamientos correspondientes
-        btn_salir.bind(on_press=partial(self.cerrar_dialog,dialog))
-        dialog.open()
+        btn_aplicar.bind(on_press=partial(aplicar_cambios,id,estilo_a_cambiar,md_dialog))
+        btn_salir.bind(on_press=partial(self.cerrar_md_dialog,md_dialog))
+        md_dialog.open()
 
     def mostrar_informacion(self,*args):
         btn_salir = MDRaisedButton(text="Salir", text_color=[0,0,0,1])
-        dialog = MDDialog(
+        md_dialog = MDDialog(
             title="Informacion de la aplicacion",
-            text="La aplicacion InterpreTikz fue desarrollada por el estudiante de Ingenieria de Sistemas Juan Guillermo Serrano Ramirez de la UT - CREAD Honda. Como proyecto de grado en la modalidad de pasantias trabajando junto la Fundacion Conciencia Activa CONATIC.",
+            text="La aplicacion InterpreTikz fue desarrollada por el estudiante de Ingenieria de Sistemas Juan Guillermo Serrano Ramirez de la UT - CREAD Honda. Como proyecto de grado en la modalidad de pasantias trabajando junto a la Fundacion Conciencia Activa CONATIC.",
             radius=[20, 7, 20, 7],
             buttons=[
                 btn_salir
             ]
         )
-        btn_salir.bind(on_press=partial(self.cerrar_dialog,dialog))
-        dialog.open()
+        btn_salir.bind(on_press=partial(self.cerrar_md_dialog,md_dialog))
+        md_dialog.open()
 
     def compilar(self,codigo_tikz):
         #Si esta en Celular...
@@ -404,12 +436,12 @@ class MainApp(MDApp):
             self.tablet_pc_wid.ids["seccion_dibujar"].add_widget(area_de_dibujar_pc_tablet)
             Pytikz(codigo_tikz,area_de_dibujar_pc_tablet)
 
-    #Funcion listar imagenes
+    #Funciones en el listador de imagenes
     def listar_imagenes_popup(self,*arg):
 
         self.listar_imagenes_wid = ListarImagenesWid(self.main_wid)
         btn_salir = MDRaisedButton(text="Salir",font_name="media/fonts/OpenSans-SemiBold")
-        listar_imagenes_popup_wid = MDDialog(
+        listar_imagenes_popup = MDDialog(
             title="Lista de imagenes de fondo:",
             type="custom",
             radius=[20, 7, 20, 7],
@@ -418,10 +450,36 @@ class MainApp(MDApp):
                 btn_salir
             ]
         )
-        btn_salir.bind(on_press=partial(self.cerrar_dialog,listar_imagenes_popup_wid))
-        listar_imagenes_popup_wid.open()
+        btn_salir.bind(on_press=partial(self.cerrar_md_dialog,listar_imagenes_popup))
+        listar_imagenes_popup.open()
 
-    #Funciones mostrar cargar
+    def cargar_imagen(self, path):
+        nombre_del_archivo = os.path.basename(path)
+        _, extension = os.path.splitext(nombre_del_archivo)#Background-image M.jpg
+        extension_img = [".jpg",".jpeg",".png"]
+        if extension in extension_img:
+            #Guardar imagen de fondo
+            self.listar_imagenes_wid.agregar_fondo(path)
+        else:
+            #Informar al usuario del error en Dialog
+            btn_salir = MDRaisedButton(text="Salir", text_color=[0,0,0,1])
+            md_dialog = MDDialog(
+                title="Error al subir imagen a la Base de Datos",
+                text="La extension "+extension+" no es valida.",
+                radius=[20, 7, 20, 7],
+                buttons=[
+                    btn_salir
+                ]
+            )
+            #Agregar los comportamientos correspondientes
+            btn_salir.bind(on_press=partial(self.cerrar_md_dialog,md_dialog))
+            md_dialog.open()
+        
+        self.explorador_abierto = False
+        self.cerrar_explorador()
+        toast(path)
+
+    #Funciones mostrar explorador
     def mostrar_explorador(self,objetivo):
         if objetivo == "cargar_imagen":
             self.explorador = MDFileManager(
@@ -432,38 +490,12 @@ class MainApp(MDApp):
         self.explorador.show('C:\\')
         self.explorador_abierto = True
 
-    def cargar_imagen(self, path):
-        filename = os.path.basename(path)
-        _, extension = os.path.splitext(filename)#Background-image M.jpg
-        extension_img = [".jpg",".jpeg",".png"]
-        if extension in extension_img:
-            #Guardar imagen de fondo
-            self.listar_imagenes_wid.agregar_fondo(path)
-        else:
-            #Informar al usuario del error en Dialog
-            btn_cancelar = MDRaisedButton(text="Cancelar", text_color=[0,0,0,1])
-            dialog = MDDialog(
-                title="Error al subir imagen a la Base de Datos",
-                text="La extension "+extension+" no es valida.",
-                radius=[20, 7, 20, 7],
-                buttons=[
-                    btn_cancelar
-                ]
-            )
-            #Agregar los comportamientos correspondientes
-            btn_cancelar.bind(on_press=partial(self.cerrar_dialog,dialog))
-            dialog.open()
-        
-        self.explorador_abierto = False
-        self.cerrar_explorador()
-        toast(path)
-
     def cerrar_explorador(self, *args):
         self.explorador_abierto = False
         self.explorador.close()
 
-    def cerrar_dialog(self,dialog,*args):
-        dialog.dismiss()
+    def cerrar_md_dialog(self,md_dialog,*args):
+        md_dialog.dismiss()
 
     #Funcion guardar comandos de un dibujo
     def guardar_dibujo(self,nombre_dibujo,comandos_dibujo):
@@ -474,6 +506,16 @@ class MainApp(MDApp):
             #MOSTRAR DATOS ACTUALIZADOS
             conjunto_de_datos = conexion_bd.api_restful("SELECCIONAR","dibujos_usuario")
             listar_botones_dibujo(conjunto_de_datos,self,self.mobil_wid,self.tablet_pc_wid)
+            title_md_dialog = "El dibujo "+nombre_dibujo+" se guardo con exito"
+        else:
+            title_md_dialog = "Ocurrio un error al guardar el dibujo "+nombre_dibujo
+        
+        md_dialog = MDDialog(
+                title=title_md_dialog,
+                radius=[20, 7, 20, 7],
+        )
+        #Agregar los comportamientos correspondientes
+        md_dialog.open()
 
     def eventos(self, instance, keyboard, keycode, text, modifiers):
         '''Se llamara cuando los botones son presionados en un dispositivo movil.'''
@@ -486,7 +528,7 @@ class MainApp(MDApp):
         #CARGAR ARCHIVOS KIVYS
         Builder.load_file("kivy/responsivo/movil_wid.kv")
         Builder.load_file("kivy/responsivo/tablet_pc_wid.kv")
-        Builder.load_file("kivy/listar_imagenes_popup.kv")
+        Builder.load_file("kivy/listar_imagenes_wid.kv")
         #Instanciar Main_wid
         self.mobil_wid = MobilWid()
         self.tablet_pc_wid = TabletPcWid()
@@ -496,11 +538,11 @@ class MainApp(MDApp):
 if __name__ == "__main__":
     MainApp().run()
     #Limpiar contenido de la carpeta source
-    folder_parent = "./Pytikz/source/"
-    folder_to_delete = ["animacion","relleno","relleno_lineas_libre","animacion_temp"]
-    list_dir = []
-    for folder in folder_to_delete:
-        list_dir.append(folder_parent+folder)
-    for dir in list_dir:
-        for f in os.listdir(dir):
-            os.remove(os.path.join(dir, f))
+    carpeta_padre = "./Pytikz/source/"
+    carpetas_a_eliminar = ["crear_imagen/grafica_original","relleno","relleno_lineas_libre","crear_imagen/grafica_recortada"]
+    rutas_de_carpeta = []
+    for carpeta in carpetas_a_eliminar:
+        rutas_de_carpeta.append(carpeta_padre+carpeta)
+    for ruta_de_carpeta in rutas_de_carpeta:
+        for archivo in os.listdir(ruta_de_carpeta):
+            os.remove(os.path.join(ruta_de_carpeta, archivo))

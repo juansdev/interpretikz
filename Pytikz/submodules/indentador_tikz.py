@@ -1,13 +1,12 @@
 import re
 
-class Indentador_tikz():
+class IndentadorTikz():
     def __init__(self,codigo_tikz):
         #Todos los Foreach
         codigo_foreach = re.findall(
             re.compile(r" *\\foreach+ [\\\w]+ \[?.*?\]?in {.+?} *{\n.*?\n*};",re.DOTALL),
             codigo_tikz
         )
-        print(codigo_foreach)
         codigo_foreach_ordenado = []
         for foreach in codigo_foreach:
             codigo_foreach_ordenado.append(foreach.split("\n"))
@@ -27,8 +26,6 @@ class Indentador_tikz():
         for one_foreach in codigo_foreach_ordenado:
             for each in one_foreach:
                 self.codigo_tikz_ordenado.append(each)
-        print("self.codigo_tikz_ordenado")
-        print(self.codigo_tikz_ordenado)
         self.codigo_tikz_ordenado_2 = []
         self.indentacion = []
     def indentar(self):
@@ -84,8 +81,6 @@ class Indentador_tikz():
             #Si el siguiente comando pertecene a un nivel diferente del anterior comando...
             elif indentado != indentado_anterior:
                 if len(self.codigo_tikz_ordenado_2) > indice:
-                    # print("Indentado: "+str(indentado))
-                    # print("Indentado anterior: "+str(indentado_anterior))
                     #NIVEL 1 -> NIVEL 2
                     if indentado_anterior == 4 and indentado == 8:
                         #Actualizar matriz de codigo tikz ordenado

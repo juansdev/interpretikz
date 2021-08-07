@@ -26,3 +26,6 @@ pip install kivymd==0.104.2
 
 - Pytz 2021.1 
 pip install pytz==2021.1
+
+- Painter 0.4.1
+pip install kivy-garden.painter

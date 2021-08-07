@@ -11,10 +11,10 @@ from kivy.clock import Clock
 from bisect import bisect, insort
 from .tools_validador_pytikz.validar_dibujar.validadores import Validadores
 from .tools_validador_pytikz.validar_dibujar.graficar.relleno import Relleno
-from .tools_validador_pytikz.validar_dibujar.graficar.relleno_lineas_libre import Relleno_lineas_libre
-from .tools_validador_pytikz.validar_dibujar.graficar.animador import Animador
+from .tools_validador_pytikz.validar_dibujar.graficar.relleno_lineas_libre import RellenoLineasLibre
+from .tools_validador_pytikz.validar_dibujar.graficar.guardar_dibujo_en_formato import GuardarDibujoEnImagen
 
-class Validador_pytikz():
+class ValidadorPytikz():
     def __init__(self,comandos_tikz_validos,area_de_dibujar):
         self.comandos_tikz_validos = comandos_tikz_validos
         self.area_de_dibujar = area_de_dibujar
@@ -22,16 +22,15 @@ class Validador_pytikz():
         self.estilo_global_local = {}
         self.comandos_global = {}
         self.index_animacion = 0
-        self.Animar = Animador(self.area_de_dibujar)
+        self.guardar_dibujo_en_imagen = GuardarDibujoEnImagen(self.area_de_dibujar)
     def validar_pytikz(self):
         for comando_tikz in self.comandos_tikz_validos:
             if(len(self.mensajes_de_error)>0):
-                for error in self.mensajes_de_error:
-                    print(error)
-                    return []
+                error = {"error":self.mensajes_de_error}
+                return error
             # self.comandos_tikz.append([self.comando_tikz,self.parametros_comando,self.posiciones,self.figura,self.funcion_de_figura])
             self.comandos_dibujar = ["draw","filldraw","fill","shade"]
-            self.comandos_variables_tikz = ["tikzstyle","definecolor","tikzset","animarPytikz","foreach"]
+            self.comandos_variables_tikz = ["tikzstyle","definecolor","tikzset","animarPytikz","foreach","guardarPytikz"]
             #Metricas validas
             self.metrica_validos = ["pt","cm"]
             if comando_tikz[0] in self.comandos_dibujar:
@@ -39,13 +38,12 @@ class Validador_pytikz():
             elif comando_tikz[0] in self.comandos_variables_tikz:
                 self.__validar_variables_tikz(comando_tikz[0],comando_tikz[1],comando_tikz[2])
             else:
-                print("Todavia el comando no esta habilitado.")
-
+                self.mensajes_de_error.append("Todavia el comando no esta habilitado.")
         if(len(self.mensajes_de_error)>0):
-            for error in self.mensajes_de_error:
-                print(error)
-                return []
-    def __validar_dibujar(self,comando_tikz,parametros_comando,draw_posicion,figuras,funcion_de_figura,area_de_dibujar,habilitado_animador=False):
+            error = {"error":self.mensajes_de_error}
+            return error
+
+    def __validar_dibujar(self,comando_tikz,parametros_comando,draw_posicion,figuras,funcion_de_figura,area_de_dibujar,habilitado_generar_figura_en_formato={}):
         if comando_tikz == "draw" or comando_tikz == "filldraw" or comando_tikz == "fill" or comando_tikz=="shade":
             #Estilos predeterminados
             self.degradients = {}
@@ -298,27 +296,27 @@ class Validador_pytikz():
                             #Dibujar contenido rectangulo
                             #DEGRADADO RECTANGULO
                             if self.degradients:
-                                Relleno(area_de_dibujar,figura,self.degradients,(punto_inicial_x_y,punto_final_x_y),(ancho,alto),animador=habilitado_animador)
+                                Relleno(area_de_dibujar,figura,self.degradients,(punto_inicial_x_y,punto_final_x_y),(ancho,alto),habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                             #RELLENO RECTANGULO
                             else:
-                                if not habilitado_animador:
+                                if not habilitado_generar_figura_en_formato:
                                     figura = InstructionGroup()
                                     figura.add(Color(self.fill[0], self.fill[1], self.fill[2]))
                                     figura.add(Rectangle(pos=(punto_inicial_x_y,punto_final_x_y),size=(ancho,alto)))
                                     area_de_dibujar.canvas.add(figura)
                                 else:
-                                    self.Animar.figura_a_png(habilitado_animador["generar_gif"],"rectangle",(ancho,alto),(punto_inicial_x_y,punto_final_x_y),(self.fill[0], self.fill[1], self.fill[2]),self.tipo_de_linea,rectangulo_dibujado_lineas,(self.draw[0], self.draw[1], self.draw[2]),self.line_width)
+                                    self.guardar_dibujo_en_imagen.figura_a_png(habilitado_generar_figura_en_formato["generar_dibujo_en_formato"],"rectangle",(ancho,alto),(punto_inicial_x_y,punto_final_x_y),(self.fill[0], self.fill[1], self.fill[2]),self.tipo_de_linea,rectangulo_dibujado_lineas,(self.draw[0], self.draw[1], self.draw[2]),self.line_width)
                             #Dibujar borde rectangulo
                             #Si hay separacion de lineas...
                             if self.tipo_de_linea:
-                                if not habilitado_animador:
+                                if not habilitado_generar_figura_en_formato:
                                     figura = InstructionGroup()
                                     figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                     figura.add(Line(points=rectangulo_dibujado_lineas, dash_offset=10, dash_length=5))
                                     area_de_dibujar.canvas.add(figura)
                             #Si no hay...
                             else:
-                                if not habilitado_animador:
+                                if not habilitado_generar_figura_en_formato:
                                     figura = InstructionGroup()
                                     figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                     figura.add(Line(points=rectangulo_dibujado_lineas,width=self.line_width))
@@ -353,16 +351,16 @@ class Validador_pytikz():
                             if self.fill != (1,1,1) or self.degradients:
                                 if self.degradients:
                                     #Aplicar degradado a la figura...
-                                    Relleno(area_de_dibujar,figura,self.degradients,(posicion_x,posicion_y),(radio*2,radio*2),angulo_inicial, angulo_final,animador=habilitado_animador)
+                                    Relleno(area_de_dibujar,figura,self.degradients,(posicion_x,posicion_y),(radio*2,radio*2),angulo_inicial, angulo_final,habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                                 else:
                                     #Aplicar relleno a la figura...
-                                    if not habilitado_animador:
+                                    if not habilitado_generar_figura_en_formato:
                                         figura = InstructionGroup()
                                         figura.add(Color(self.fill[0],self.fill[1],self.fill[2]))
                                         figura.add(Ellipse(pos=(posicion_x,posicion_y),size=(radio*2,radio*2),angle_start=angulo_inicial, angle_end=angulo_final))
                                         area_de_dibujar.canvas.add(figura)
                                     else:
-                                        self.Animar.figura_a_png(habilitado_animador["generar_gif"],"arc",(radio*2,radio*2),(posicion_x,posicion_y),(self.fill[0], self.fill[1], self.fill[2]),self.tipo_de_linea,[posicion_x,posicion_y,radio,angulo_inicial,angulo_final],(self.draw[0], self.draw[1], self.draw[2]),self.line_width,angle_start=angulo_inicial, angle_end=angulo_final)
+                                        self.guardar_dibujo_en_imagen.figura_a_png(habilitado_generar_figura_en_formato["generar_dibujo_en_formato"],"arc",(radio*2,radio*2),(posicion_x,posicion_y),(self.fill[0], self.fill[1], self.fill[2]),self.tipo_de_linea,[posicion_x,posicion_y,radio,angulo_inicial,angulo_final],(self.draw[0], self.draw[1], self.draw[2]),self.line_width,angle_start=angulo_inicial, angle_end=angulo_final)
                             posicion_x+=radio
                             posicion_y+=radio
                             self.posicion_x_arc = posicion_x
@@ -370,7 +368,7 @@ class Validador_pytikz():
                             #DIBUJAR ARC
                             #ARCO CON LINEAS DISCONTINUADAS
                             if self.tipo_de_linea:
-                                if not habilitado_animador:
+                                if not habilitado_generar_figura_en_formato:
                                     figura = InstructionGroup()
                                     figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                     figura.add(Line(circle=[posicion_x,posicion_y,radio,angulo_inicial,angulo_final], dash_offset=10, dash_length=5))
@@ -378,7 +376,7 @@ class Validador_pytikz():
                             #Si no hay...
                             #ARCO SIN LINEAS DISCONTINUADAS
                             else:
-                                if not habilitado_animador:
+                                if not habilitado_generar_figura_en_formato:
                                     figura = InstructionGroup()
                                     figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                     figura.add(Line(circle=[posicion_x,posicion_y,radio,angulo_inicial,angulo_final],width=self.line_width))
@@ -402,28 +400,28 @@ class Validador_pytikz():
                                 alto = radio*2
                                 if self.degradients:
                                     #APLICAR DEGRADADO AL CIRCULO
-                                    Relleno(area_de_dibujar,figura,self.degradients,(posicion_x,posicion_y),(ancho,alto),animador=habilitado_animador)
+                                    Relleno(area_de_dibujar,figura,self.degradients,(posicion_x,posicion_y),(ancho,alto),habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                                 else:
                                     #RELLENO CIRCULO
-                                    if not habilitado_animador:
+                                    if not habilitado_generar_figura_en_formato:
                                         figura = InstructionGroup()
                                         figura.add(Color(self.fill[0], self.fill[1], self.fill[2]))
                                         figura.add(Ellipse(pos=(posicion_x,posicion_y),size=(ancho,alto)))
                                         area_de_dibujar.canvas.add(figura)
                                     else:
-                                        self.Animar.figura_a_png(habilitado_animador["generar_gif"],"circle",(ancho,alto),(posicion_x,posicion_y),(self.fill[0], self.fill[1], self.fill[2]),self.tipo_de_linea,[posicion_x,posicion_y,radio],(self.draw[0], self.draw[1], self.draw[2]),self.line_width)
+                                        self.guardar_dibujo_en_imagen.figura_a_png(habilitado_generar_figura_en_formato["generar_dibujo_en_formato"],"circle",(ancho,alto),(posicion_x,posicion_y),(self.fill[0], self.fill[1], self.fill[2]),self.tipo_de_linea,[posicion_x,posicion_y,radio],(self.draw[0], self.draw[1], self.draw[2]),self.line_width)
                                 #DIBUJAR BORDE CIRCULO
                                 posicion_x+=radio
                                 posicion_y+=radio
                                 if self.tipo_de_linea:
-                                    if not habilitado_animador:
+                                    if not habilitado_generar_figura_en_formato:
                                         figura = InstructionGroup()
                                         figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                         figura.add(Line(circle=[posicion_x,posicion_y,radio], dash_offset=10, dash_length=self.line_width))
                                         area_de_dibujar.canvas.add(figura)
                                 #Si no hay...
                                 else:
-                                    if not habilitado_animador:
+                                    if not habilitado_generar_figura_en_formato:
                                         figura = InstructionGroup()
                                         figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                         figura.add(Line(circle=[posicion_x,posicion_y,radio], width=self.line_width))
@@ -466,7 +464,7 @@ class Validador_pytikz():
                             if len(coordenadas)>=4:
                                 #Dibujar en el area de dibujado...
                                 #Si hay separacion de lineas...
-                                if not habilitado_animador:
+                                if not habilitado_generar_figura_en_formato:
                                     if self.tipo_de_linea:
                                         figura = InstructionGroup()
                                         figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
@@ -582,19 +580,19 @@ class Validador_pytikz():
                                     if self.fill != (1,1,1) or self.degradients:
                                         if self.fill != (1,1,1):
                                             #Crear Imagen con relleno y aplicarlo en el Source de un Rectangle para luego dibujarlo en el Area_de_dibujar
-                                            Relleno_lineas_libre(area_de_dibujar,coordenadas,self.fill,animador=habilitado_animador)
+                                            RellenoLineasLibre(area_de_dibujar,coordenadas,self.fill,habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                                         else:
-                                            Relleno_lineas_libre(area_de_dibujar,coordenadas,self.degradients,False,True,animador=habilitado_animador)
+                                            RellenoLineasLibre(area_de_dibujar,coordenadas,self.degradients,False,True,habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                                     #DIBUJAR LINEAS
                                     #Si hay separacion de lineas...
                                     if self.tipo_de_linea:
                                         if len(coordenadas_cycle_arc):
-                                            if not habilitado_animador:
+                                            if not habilitado_generar_figura_en_formato:
                                                 figura = InstructionGroup()
                                                 figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                                 figura.add(Line(points=coordenadas_cycle_arc, dash_offset=10, dash_length=5))
                                                 area_de_dibujar.canvas.add(figura)
-                                        if not habilitado_animador:
+                                        if not habilitado_generar_figura_en_formato:
                                             figura = InstructionGroup()
                                             figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                             figura.add(Line(points=coordenadas, dash_offset=10, dash_length=5))
@@ -602,12 +600,12 @@ class Validador_pytikz():
                                     #Si no hay...
                                     else:
                                         if len(coordenadas_cycle_arc):
-                                            if not habilitado_animador:
+                                            if not habilitado_generar_figura_en_formato:
                                                 figura = InstructionGroup()
                                                 figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                                 figura.add(Line(points=coordenadas_cycle_arc, width=self.line_width))
                                                 area_de_dibujar.canvas.add(figura)
-                                        if not habilitado_animador:
+                                        if not habilitado_generar_figura_en_formato:
                                             figura = InstructionGroup()
                                             figura.add(Color(self.draw[0], self.draw[1],self.draw[2]))
                                             figura.add(Line(points=coordenadas, width=self.line_width))
@@ -652,29 +650,29 @@ class Validador_pytikz():
                                 if self.fill != (1,1,1) or self.degradients:
                                     if self.degradients:
                                         #Aplicar degradado a la figura...
-                                        Relleno(area_de_dibujar,figura,self.degradients,(posicion_x,posicion_y),(radio*2,radio*2),angulo_inicial,angulo_final,animador=habilitado_animador)
+                                        Relleno(area_de_dibujar,figura,self.degradients,(posicion_x,posicion_y),(radio*2,radio*2),angulo_inicial,angulo_final,habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                                     else:
                                         #Aplicar relleno a la figura...
-                                        if not habilitado_animador:
+                                        if not habilitado_generar_figura_en_formato:
                                             figura = InstructionGroup()
                                             figura.add(Color(self.fill[0],self.fill[1],self.fill[2]))
                                             figura.add(Ellipse(pos=(posicion_x,posicion_y),size=(radio*2,radio*2),angle_start=angulo_inicial, angle_end=angulo_final))
                                             area_de_dibujar.canvas.add(figura)
                                         else:
-                                            self.Animar.figura_a_png(habilitado_animador["generar_gif"],"arc",(radio*2,radio*2),(posicion_x,posicion_y),(self.fill[0],self.fill[1],self.fill[2]),self.tipo_de_linea,[posicion_x,posicion_y,radio,angulo_inicial,angulo_final],(self.draw[0], self.draw[1], self.draw[2]),self.line_width,angle_start=angulo_inicial, angle_end=angulo_final)
+                                            self.guardar_dibujo_en_imagen.figura_a_png(habilitado_generar_figura_en_formato["generar_dibujo_en_formato"],"arc",(radio*2,radio*2),(posicion_x,posicion_y),(self.fill[0],self.fill[1],self.fill[2]),self.tipo_de_linea,[posicion_x,posicion_y,radio,angulo_inicial,angulo_final],(self.draw[0], self.draw[1], self.draw[2]),self.line_width,angle_start=angulo_inicial, angle_end=angulo_final)
                                 #DIBUJAR ARC
                                 posicion_x+=radio
                                 posicion_y+=radio
                                 #BORDE CON LINEAS DISCONTINUADAS
                                 if self.tipo_de_linea:
-                                    if not habilitado_animador:
+                                    if not habilitado_generar_figura_en_formato:
                                         figura = InstructionGroup()
                                         figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                         figura.add(Line(circle=[posicion_x,posicion_y,radio,angulo_inicial,angulo_final], dash_offset=10, dash_length=5))
                                         area_de_dibujar.canvas.add(figura)
                                 #Si no hay...
                                 else:
-                                    if not habilitado_animador:
+                                    if not habilitado_generar_figura_en_formato:
                                         figura = InstructionGroup()
                                         figura.add(Color(self.draw[0], self.draw[1], self.draw[2]))
                                         figura.add(Line(circle=[posicion_x,posicion_y,radio,angulo_inicial,angulo_final],width=self.line_width))
@@ -682,7 +680,7 @@ class Validador_pytikz():
                         #No tiene figura
                         else:
                             self.mensajes_de_error.append("Error el comando TikZ '"+comando_tikz+"' no tiene una figura valida.")
-    def __validar_variables_tikz(self,comando_tikz,funcion_de_comando,parametros_comando,habilitado_animador=False):
+    def __validar_variables_tikz(self,comando_tikz,funcion_de_comando,parametros_comando,habilitado_generar_figura_en_formato={}):
         def animar(nuevo_codigo_tikz_anidado,canvas_no_animar,schedule_animate,*args):
             try:
                 codigo_a_dibujar = nuevo_codigo_tikz_anidado[self.index_animacion]
@@ -819,21 +817,21 @@ class Validador_pytikz():
 
             #Si es para generar GIF, entonces se va a generar imagenes a partir de cada código dentro del comando animarPytikz que se utilizara para generar GIF, y luego se animara el mismo resultado pero en el aplicativo.
             if("save" in parametros_comando[0]):
-                habilitado_animador = {"generar_gif":True}
+                habilitado_generar_figura_en_formato = {"generar_dibujo_en_formato":True, "retornar_conjunto_de_codigos":True}
             #Caso contrario, entonces se animara en la misma aplicación
             else:
-                habilitado_animador = {"generar_gif":False}
+                habilitado_generar_figura_en_formato = {"generar_dibujo_en_formato":False, "retornar_conjunto_de_codigos":True}
             for comando_tikz_anidado in codigo_tikz_anidado:
                 if(len(self.mensajes_de_error)>0):
                     break
                 #Comandos preexistentes...
                 if type(comando_tikz_anidado) is list:
                     if comando_tikz_anidado[0] in self.comandos_dibujar:
-                        #Validar comandos si es para animar
-                        self.__validar_dibujar(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],comando_tikz_anidado[3],comando_tikz_anidado[4],self.area_de_dibujar,habilitado_animador=habilitado_animador)
+                        #Generar figuras en formato para la creacion de un GIF o JPG
+                        self.__validar_dibujar(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],comando_tikz_anidado[3],comando_tikz_anidado[4],self.area_de_dibujar,habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                     elif comando_tikz_anidado[0] in self.comandos_variables_tikz:
-                        #Validar comandos o retornar lista de comandos a animar 
-                        frames_foraech = self.__validar_variables_tikz(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],habilitado_animador=habilitado_animador)
+                        #Generar figuras en formato para la creacion de un GIF o JPG
+                        frames_foraech = self.__validar_variables_tikz(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                         if len(frames_foraech):
                             conjunto_de_comandos.append(frames_foraech)
                 #Comandos del usuario...
@@ -841,19 +839,19 @@ class Validador_pytikz():
                     for comando_personalizado in comando_tikz_anidado.values():
                         for comando in comando_personalizado:
                             if comando[0] in self.comandos_dibujar:
-                                #Validar comandos si es para animar
-                                self.__validar_dibujar(comando[0],comando[1],comando[2],comando[3],comando[4],self.area_de_dibujar,habilitado_animador=habilitado_animador)
+                                #Generar figuras en formato para la creacion de un GIF o JPG
+                                self.__validar_dibujar(comando[0],comando[1],comando[2],comando[3],comando[4],self.area_de_dibujar,habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                             elif comando[0] in self.comandos_variables_tikz:
-                                #Validar comandos o retornar lista de comandos a animar 
-                                frames_foraech = self.__validar_variables_tikz(comando[0],comando[1],comando[2],habilitado_animador=habilitado_animador)
+                                #Generar figuras en formato para la creacion de un GIF o JPG
+                                frames_foraech = self.__validar_variables_tikz(comando[0],comando[1],comando[2],habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
                                 if len(frames_foraech):
                                     conjunto_de_comandos.append(frames_foraech)
                         #Cada conjunto de comando estara dentro de una TUPLA, cada indice de conjunto_de_comandos, pertenece a los comandos anidados en un comando.
                         conjunto_de_comandos.append([tuple(comando_personalizado)])
 
             #Generar GIF
-            if(habilitado_animador["generar_gif"]):
-                self.Animar.generar_animacion()
+            if(habilitado_generar_figura_en_formato["generar_dibujo_en_formato"]):
+                self.guardar_dibujo_en_imagen.crear_imagen()
 
             #Generar animación en aplicativo...
             index_lista_de_comandos = 0
@@ -879,6 +877,50 @@ class Validador_pytikz():
             schedule_animate = partial(animar,codigo_tikz_anidado,canvas_no_animar.my_list)
             schedule_animate(schedule_animate)
             Clock.schedule_interval(schedule_animate,1)
+        
+        elif comando_tikz == "guardarPytikz":
+            print("__________________________________________________________")
+            print("CODIGO ANIDADO A EJECUTAR")
+            print(funcion_de_comando[1]["ejecutar"])
+            print("__________________________________________________________")
+            codigo_tikz_anidado = funcion_de_comando[1]["ejecutar"]
+
+            habilitado_generar_figura_en_formato = {"generar_dibujo_en_formato":True, "retornar_conjunto_de_codigos":False}
+            
+            for comando_tikz_anidado in codigo_tikz_anidado:
+                if(len(self.mensajes_de_error)>0):
+                    break
+                #Comandos preexistentes...
+                if type(comando_tikz_anidado) is list:
+                    if comando_tikz_anidado[0] in self.comandos_dibujar:
+                        #Dibujar comandos
+                        self.__validar_dibujar(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],comando_tikz_anidado[3],comando_tikz_anidado[4],self.area_de_dibujar)
+                        #Generar figuras en formato para la creacion de un GIF o JPG
+                        self.__validar_dibujar(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],comando_tikz_anidado[3],comando_tikz_anidado[4],self.area_de_dibujar,habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
+                    elif comando_tikz_anidado[0] in self.comandos_variables_tikz:
+                        #Dibujar comandos
+                        self.__validar_variables_tikz(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2])
+                        #Generar figuras en formato para la creacion de un GIF o JPG
+                        self.__validar_variables_tikz(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
+                #Comandos del usuario...
+                elif type(comando_tikz_anidado) is dict:
+                    for comando_personalizado in comando_tikz_anidado.values():
+                        for comando in comando_personalizado:
+                            if comando[0] in self.comandos_dibujar:
+                                #Dibujar comandos
+                                self.__validar_dibujar(comando[0],comando[1],comando[2],comando[3],comando[4],self.area_de_dibujar)
+                                #Generar figuras en formato para la creacion de un GIF o JPG
+                                self.__validar_dibujar(comando[0],comando[1],comando[2],comando[3],comando[4],self.area_de_dibujar,habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
+                            elif comando[0] in self.comandos_variables_tikz:
+                                #Dibujar comandos
+                                self.__validar_variables_tikz(comando[0],comando[1],comando[2])
+                                #Generar figuras en formato para la creacion de un GIF o JPG
+                                self.__validar_variables_tikz(comando[0],comando[1],comando[2],habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
+
+            #Generar ARCHIVO
+            if(habilitado_generar_figura_en_formato["generar_dibujo_en_formato"]):
+                self.guardar_dibujo_en_imagen.crear_imagen()
+        
         elif comando_tikz == "foreach":
             #Generar valores según Foreach
             
@@ -898,6 +940,9 @@ class Validador_pytikz():
             generado_nuevo_codigo_tikz_anidado = False
 
             def reemplazar_valores(codigo_tikz_anidado,var,valor_original,valor_a_reemplazar,index,index_tipo=None,index_interior=None):
+                if isinstance(var,dict):
+                    var = var["variable"]
+
                 if re.search(r"\\"+var,valor_original):#Si hay variables...
                     #Cambiar valor correspondiente por el asignado en el Foreach
                     variables_anidado = valor_original[
@@ -993,28 +1038,35 @@ class Validador_pytikz():
             print("_____________________________________________-")
 
             #Retornar lista de comandos si es para animar, no para generar GIF
-            if(not habilitado_animador["generar_gif"]):
-                #Dividir valores del foreach según Each, para facilitar la animación
-                codigo_tikz_por_frame = []
-                total_frames = len(each[0])
-                for _ in range(total_frames):
-                    codigo_tikz_por_frame.append([])
-                index = 0
-                for codigo in nuevo_codigo_tikz_anidado:
-                    codigo_tikz_por_frame[index].append(codigo)
-                    if(index == total_frames-1):
-                        index = 0
-                    else:
-                        index+=1
-                nuevo_codigo_tikz_por_frame = []
-                for frame in codigo_tikz_por_frame:
-                    nuevo_codigo_tikz_por_frame.append(tuple(frame))
-                return nuevo_codigo_tikz_por_frame
-            #Generar imagenes mediante comandos generados por foreach, para luego convertirlos a GIF
-            elif(habilitado_animador["generar_gif"]):
-                for comando_tikz_anidado in nuevo_codigo_tikz_anidado:
-                    self.__validar_dibujar(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],comando_tikz_anidado[3],comando_tikz_anidado[4],self.area_de_dibujar,habilitado_animador=habilitado_animador)
+            dibujar_comandos = False if "generar_dibujo_en_formato" in habilitado_generar_figura_en_formato.keys() else True
+            generar_archivo = habilitado_generar_figura_en_formato["generar_dibujo_en_formato"] if not dibujar_comandos else False
+            retornar_conjunto_de_codigos = habilitado_generar_figura_en_formato["retornar_conjunto_de_codigos"] if not dibujar_comandos else False
+            if(not dibujar_comandos):
+                def retornar_codigos(each,nuevo_codigo_tikz_anidado):
+                    #Dividir valores del foreach según Each, para facilitar la animación
+                    codigo_tikz_por_frame = []
+                    total_frames = len(each[0])
+                    for _ in range(total_frames):
+                        codigo_tikz_por_frame.append([])
+                    index = 0
+                    for codigo in nuevo_codigo_tikz_anidado:
+                        codigo_tikz_por_frame[index].append(codigo)
+                        if(index == total_frames-1):
+                            index = 0
+                        else:
+                            index+=1
+                    nuevo_codigo_tikz_por_frame = []
+                    for frame in codigo_tikz_por_frame:
+                        nuevo_codigo_tikz_por_frame.append(tuple(frame))
+                    return nuevo_codigo_tikz_por_frame
+                if(generar_archivo and retornar_conjunto_de_codigos):
+                    #Generar imagenes mediante comandos generados por foreach, para luego convertirlos a GIF y retornar conjunto de codigo tikz para animarse.
+                    for comando_tikz_anidado in nuevo_codigo_tikz_anidado:
+                        self.__validar_dibujar(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],comando_tikz_anidado[3],comando_tikz_anidado[4],self.area_de_dibujar,habilitado_generar_figura_en_formato=habilitado_generar_figura_en_formato)
+                    return retornar_codigos(each,nuevo_codigo_tikz_anidado)
+                if(not generar_archivo and retornar_conjunto_de_codigos):
+                    return retornar_codigos(each,nuevo_codigo_tikz_anidado)
             #Dibujar según comandos de Foreach
-            else:
+            elif(dibujar_comandos):
                 for comando_tikz_anidado in nuevo_codigo_tikz_anidado:
                     self.__validar_dibujar(comando_tikz_anidado[0],comando_tikz_anidado[1],comando_tikz_anidado[2],comando_tikz_anidado[3],comando_tikz_anidado[4],self.area_de_dibujar)

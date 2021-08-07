@@ -3,7 +3,7 @@ import enum
 import re, json
 from .tools_depurador_tikz.agregar_comando.tratamiento_parametros import TratamientoParametros
 
-class Depurador_tikz():
+class DepuradorTikz():
     def __init__(self,codigo_tikz_ordenado):
         self.codigo_tikz_ordenado = codigo_tikz_ordenado
         self.comandos_tikz_validados = [] #Aqui se guardaran todos los comandos validos de Tikz.
@@ -12,7 +12,7 @@ class Depurador_tikz():
         #Mensajes de error de codigo
         self.mensajes_de_error = []
         #Aqui se guardan los comandos que tienen comandos anidados dentro de si...
-        self.comandos_anidadores = ["newcommand","animarPytikz","foreach"]
+        self.comandos_anidadores = ["newcommand","animarPytikz","guardarPytikz","foreach"]
         #Aqui se guardan los comandos creados por el usuario...
         self.comandos_de_usuario = {}
         #Aqui se guardan los comandos a animar por el usuario...
@@ -25,9 +25,8 @@ class Depurador_tikz():
     def depurar_codigo(self):
         for codigo in self.codigo_tikz_ordenado:
             if(len(self.mensajes_de_error)>0):
-                for error in self.mensajes_de_error:
-                    print(error)
-                    return []
+                error = {"error":self.mensajes_de_error}
+                return error
             #Comando utilizado...
             self.comando_tikz = ""#EJ:\draw, \shade, \filldraw
 
@@ -88,10 +87,11 @@ class Depurador_tikz():
                     self.__agregar_comando(self.comandos_tikz_validados[len(self.comandos_tikz_validados)-1][1])
                     self.comandos_tikz_validados.pop()
             self.linea_codigo += 1
-        if(len(self.mensajes_de_error)>0):
-            for error in self.mensajes_de_error:
-                print(error)
-                return []
+        if(len(self.mensajes_de_error)>0 or not len(self.comandos_tikz_validados)):
+            if(not len(self.comandos_tikz_validados)):
+                self.mensajes_de_error.append("No se ha escrito comandos Tikz validos.")
+            error = {"error":self.mensajes_de_error}
+            return error
         return self.comandos_tikz_validados
 
     def __validador_codigo(self,codigo,contenido_comando=False):
@@ -153,8 +153,11 @@ class Depurador_tikz():
 
     # ANIMAR INSTRUCCIONES DE DIBUJO - CONTENIDO ANIDADO
 
-        elif(re.search(r"^ *\\animarPytikz",codigo)):
-            self.comando_tikz = "animarPytikz"
+        elif(re.search(r"^ *\\animarPytikz",codigo) or re.search(r"^ *\\guardarPytikz",codigo)):
+            if re.search(r"^ *\\animarPytikz",codigo):
+                self.comando_tikz = "animarPytikz"
+            else:
+                self.comando_tikz = "guardarPytikz"
             self.__validador_parametros_comando(codigo)
             if not contenido_comando:
                 self.comandos_tikz_validados.append([self.comando_tikz, self.funcion_de_comando, self.parametros_comando])
@@ -237,6 +240,7 @@ class Depurador_tikz():
                         #En el caso de que se cree despues de [] unos objetos asi: []{}
                         indice_de_objeto = [i for i, letra in enumerate(codigo) if letra == "}"]
                         parametros_objeto_consecutivos(self.comando_tikz,codigo,indice_de_objeto)
+                        
         def parametros_objeto_consecutivos(comando,codigo,indice_de_objeto):
             if len(indice_de_objeto):
                 objeto_str = codigo[slice(codigo.find("{"),indice_de_objeto[0]+1)]+"}"
@@ -325,8 +329,8 @@ class Depurador_tikz():
                     
                     #Si hay mas de 2 comandos de dibujado invocados...
                     if len(self.comandos_tikz_validados)-1 >= 0:
-                        #Si se desea añadir los comandos invocados al "ejecutar" del comando "animarPytikz", se añadira con todo y nombre del nomando personalizado...
-                        if self.comandos_tikz_validados[len(self.comandos_tikz_validados)-1][0] == "animarPytikz":
+                        #Si se desea añadir los comandos invocados al "ejecutar" del comando "animarPytikz" o "guardarPytikz", se añadira con todo y nombre del nomando personalizado...
+                        if self.comandos_tikz_validados[len(self.comandos_tikz_validados)-1][0] == "animarPytikz" or self.comandos_tikz_validados[len(self.comandos_tikz_validados)-1][0] == "guardarPytikz":
                             comandos = {comando:comandos_sin_establecer[comando]}
                             # for comando_establecido in comandos_sin_establecer[comando]:
                             #     comandos.append(comando_establecido)
@@ -476,7 +480,12 @@ class Depurador_tikz():
                 for comando_establecido in self.comandos_de_usuario[self.comando_tikz]:
                     comandos.append(comando_establecido)
                 self.funcion_de_comando[1]["ejecutar"] = comandos
-                self.comando_tikz = "animarPytikz"
+                print("self.comando_tikz")
+                print(self.comando_tikz)
+                if self.comando_tikz == "animarPytikz":
+                    self.comando_tikz = "animarPytikz"
+                else:
+                    self.comando_tikz = "guardarPytikz"
                 self.comandos_tikz_validados.append([self.comando_tikz, self.funcion_de_comando, self.parametros_comando])
             else:
                 self.mensajes_de_error.append("Error: Debes de definir la cantidad de parametros de "+str(cantidad_de_parametros)+" en el comando que invocaste.")
@@ -703,7 +712,7 @@ class Depurador_tikz():
     def __anidar(self,codigo,anidado_nivel_2=False):
         #Leer comandos que se almacenaran en esta clase...
         comando_anidador = self.comandos_tikz_validados[len(self.comandos_tikz_validados)-1][0]
-        #Si se trata de un comando que esta dentro de un comando anidador... [foreach, newcommand, animarPytikz]
+        #Si se trata de un comando que esta dentro de un comando anidador... [foreach, newcommand, animarPytikz, guardarPytikz]
         if comando_anidador in self.comandos_anidadores:
             codigo = self.__validador_codigo(codigo,True)
             if "ejecutar" in list(self.comandos_tikz_validados[len(self.comandos_tikz_validados)-1][1][1].keys()):
