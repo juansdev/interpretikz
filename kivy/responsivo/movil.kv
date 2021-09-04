@@ -1,0 +1,303 @@
+#:kivy 2.0.0
+<Movil>:
+    RelativeLayout:
+        size_hint_y: None
+        height: contenedor.height
+        MDGridLayout:
+            id: contenedor
+            cols: 1
+            rows_minimum: {0:root.height*.1, 1:root.height*.8, 2:root.height*.03, 3:root.height*.07, 4:root.height*.7, 5:root.height*.03, 6:root.height*.07, 7:root.height*.07, 8:root.height*.03, 9:root.height*.05}
+            spacing: [0,15]
+            size_hint_y: None
+            height: self.minimum_height
+            #SUPERIOR - 0
+            MDToolbar:
+                size_hint_y: None
+                height: dp(root.height*.1)
+                md_bg_color: app.theme_cls.accent_dark
+                #Titulo
+                title: "InterpreTikZ"
+                anchor_title: "center"
+                #Acceder a herramientas
+                left_action_items: [["folder-multiple-image", app.listar_imagenes_popup],["invert-colors", app.alternar_estilos]]
+
+            #AREA DE DIBUJADO - 1
+            MDBoxLayout:
+                orientation: 'vertical'
+                #Area de dibujar
+                PainterWidget:
+                    id: seccion_dibujar
+                    draw_mode: "circle" if mode.text == "Circulo" else "ellipse" if mode.text == "Elipse" else "polygon" if mode.text == "Poligono" else "point" if mode.text == "Punto" else "none" if mode.text == "Ninguno" else 'freeform'
+                    locked: lock.icon == 'lock'
+                    multiselect: multiselect.icon == 'checkbox-multiple-blank'
+                    rows: 1
+                    size_hint_y: .9
+                    canvas.before:
+                        Color:
+                            rgb: 1,1,1#Fondo blanco
+                        Rectangle:
+                            size: self.size
+                            pos: self.pos
+                #Controles
+                MDBoxLayout:
+                    size_hint_y: .1
+                    padding: [10,0]
+                    md_bg_color: app.theme_cls.primary_dark
+                    BotonConInfo:
+                        id: lock
+                        icon:"lock"
+                        theme_text_color: "Custom"
+                        text_color: 0,0,0,1
+                        tooltip_text: "Habilitar dibujo"
+                    MDSlider: 
+                        size_hint_x: .6
+                        min: 1
+                        max: 10
+                        value: 1
+                        color: app.theme_cls.accent_light
+                        on_value: seccion_dibujar.set_shape_size(self.value)
+                    MDTextFieldRect:
+                        size_hint_x: .4
+                        size_hint_y: None
+                        height: dp(30)
+                        pos_hint: {'center_x': .5, 'center_y': .5}
+                        hint_text: "Tamaño del borde"
+                        multiline: False
+                        on_text_validate: seccion_dibujar.set_shape_size(self.text)
+            #Lista de comandos - 2
+            MDLabel:
+                font_name: "media/fonts/OpenSans-ExtraBold"
+                font_style: "H6"
+                halign: "center"
+                text: "Lista de comandos"
+            #Barra acceso rapido superior. -3
+            ScrollView:
+                MDGridLayout:
+                    id: acceso_rapido_sup
+                    size_hint_x: None
+                    rows: 1
+                    width: self.minimum_width
+                    spacing: [5,0]
+            #AREA DE CODIGO - 4
+            MDTextFieldRect:
+                id: codigo_tikz
+                hint_text: "Escribe aqui código TikZ..."
+            #Dibujos guardados. - 5
+            MDLabel:
+                font_name: "media/fonts/OpenSans-ExtraBold"
+                font_style: "H6"
+                halign: "center"
+                text: "Dibujos guardados"
+            #Barra acceso rapido inferior. - 6
+            ScrollView:
+                AccesoRapidoAbajo:
+                    id: acceso_rapido_abajo
+                    size_hint_x: None
+                    rows: 1
+                    col_default_width: root.width*0.45#45% del ancho total de ventana.
+                    width: self.minimum_width
+                    spacing: [15,0]
+            #Guardar un dibujo con todos los comandos.        
+            #Input. - 7
+            MDTextFieldRect:
+                font_name: "media/fonts/OpenSans-Regular"
+                hint_text: "Nombre del dibujo"
+                mode: "rectangle"
+                id: nombre_dibujo
+            #Guardar. - 8
+            MDRaisedButton:
+                size_hint: [1, None]
+                height: dp(35)
+                font_name: "media/fonts/OpenSans-SemiBold"
+                font_style: "H6"
+                text: "Guardar"
+                md_bg_color: [1, 1, 0, 1]
+                on_press: app.guardar_dibujo(nombre_dibujo.text,codigo_tikz.text)
+            #BOTON COMPILAR - 9
+            MDRaisedButton:
+                size_hint_x: 1
+                font_name: "media/fonts/OpenSans-Bold"
+                font_style: "H5"
+                halign: "center"
+                text: "RECOMPILAR"
+                md_bg_color: app.theme_cls.primary_dark
+                on_press: app.compilar(codigo_tikz.text)
+                canvas:
+                    Rectangle:
+                        source:"media/iconos/reload.png"
+                        pos: [self.center[0]-115,self.center[1]-15]
+                        size: 30,30
+            #PIE DE PAGINA.
+            BoxLayout:
+                size_hint_x: 1
+                size_hint_y: None
+                height: dp(root.height*.20)
+                MDBottomAppBar:
+                    MDToolbar:
+                        id: bottomAppBar
+                        title: "Todos los derechos reservados ©"
+                        icon: "media/iconos/logo.png"
+                        type: "bottom"
+                        mode: "end"
+                        on_action_button: app.mostrar_informacion()
+        
+        MDFloatLayout:
+            MDBoxLayout:
+                id: label_modo_normal_1
+                pos: seccion_dibujar.pos
+                size_hint: None, None
+                size: seccion_dibujar.size
+                orientation: 'vertical'
+                MDBoxLayout:
+                    size_hint_y: .1
+                    orientation: 'vertical'
+                    MDLabel:
+                        font_name: "media/fonts/OpenSans-ExtraBold"
+                        font_style: "Caption"
+                        halign: "center"
+                        text: "Tamaño del lienzo de dibujo"
+                        theme_text_color:"ContrastParentBackground"
+                    MDLabel:
+                        id: info
+                        font_name: "media/fonts/OpenSans-ExtraBold"
+                        font_style: "Caption"
+                        halign: "center"
+                        theme_text_color:"ContrastParentBackground"
+                MDBoxLayout:
+                    size_hint_y: .9
+            MDBoxLayout:
+                pos: seccion_dibujar.pos
+                size_hint: None, None
+                size: seccion_dibujar.size
+                orientation: 'vertical'
+                MDBoxLayout:
+                    id: label_modo_dibujar_1
+                    size_hint_y: .1
+                    opacity: 0
+                    disabled: True
+                    MDLabel:
+                        id: mode
+                        font_name: "media/fonts/OpenSans-ExtraBold"
+                        font_style: "Caption"
+                        halign: "center"
+                        text: "Ninguno"
+                        theme_text_color:"ContrastParentBackground"
+                    MDLabel:
+                        font_name: "media/fonts/OpenSans-ExtraBold"
+                        font_style: "Caption"
+                        halign: "center"
+                        text: "Tecla: {}, Mouse: \{}".format(seccion_dibujar.keyboard_keys, seccion_dibujar.mouse and 'Down' or '')
+                        theme_text_color: "Custom"
+                        text_color: 0,0,0,1
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        MDLabel:
+                            font_name: "media/fonts/OpenSans-ExtraBold"
+                            font_style: "Caption"
+                            halign: "center"
+                            text: "Color del fondo"
+                            theme_text_color: "ContrastParentBackground"
+                        MDLabel:
+                            id: color_relleno
+                            font_name: "media/fonts/OpenSans-ExtraBold"
+                            font_style: "Caption"
+                            halign: "center"
+                            theme_text_color: "Custom"
+                            text_color: 0,0,0,1
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        MDLabel:
+                            font_name: "media/fonts/OpenSans-ExtraBold"
+                            font_style: "Caption"
+                            halign: "center"
+                            text: "Color del borde"
+                            theme_text_color: "ContrastParentBackground"
+                        MDLabel:
+                            id: color_borde
+                            font_name: "media/fonts/OpenSans-ExtraBold"
+                            font_style: "Caption"
+                            halign: "center"
+                            theme_text_color: "Custom"
+                            text_color: 0,0,0,1
+                MDBoxLayout:
+                    size_hint_y: .9
+                    MDBoxLayout:
+                        size_hint_x: .1
+                        orientation: 'vertical'
+                        id: botones_modo_dibujar_1
+                        BotonConInfo:
+                            opacity: 0
+                            disabled: True
+                            icon:"arrow-up-circle"
+                            theme_text_color: "Custom"
+                            text_color: 0,0,0,1
+                            on_press: seccion_dibujar.change_layer(up=True)
+                            tooltip_text: "Subir capa"
+                        BotonConInfo:
+                            opacity: 0
+                            disabled: True
+                            icon:"arrow-down-circle"
+                            theme_text_color: "Custom"
+                            text_color: 0,0,0,1
+                            on_press: seccion_dibujar.change_layer()
+                            tooltip_text: "Bajar capa"
+                    MDBoxLayout:
+                        size_hint_x: .8
+                        id: botones_modo_dibujar_2
+                        BotonConInfo:
+                            opacity: 0
+                            disabled: True
+                            pos_hint: {'right': 1}
+                            icon:"eye-off"
+                            theme_text_color: "Custom"
+                            text_color: 0,0,0,1
+                            tooltip_text: "Mostrar edicion"
+                            on_press: seccion_dibujar.change_edit_mode(self)
+                        BotonConInfo:
+                            id: multiselect
+                            opacity: 0
+                            disabled: True
+                            pos_hint: {'left': 1}
+                            icon:"checkbox-multiple-blank-outline"
+                            theme_text_color: "Custom"
+                            text_color: 0,0,0,1
+                            tooltip_text: "Seleccion multiple"
+                    MDBoxLayout:
+                        id: botones_modo_dibujar_3
+                        size_hint_x: .1
+                        orientation: 'vertical'
+                        BotonConInfo:
+                            opacity: 0
+                            disabled: True
+                            pos_hint: {'right': 1}
+                            icon:"format-color-fill"
+                            theme_text_color: "Custom"
+                            text_color: 0,0,0,
+                            tooltip_text: "Rellenar el fondo"
+                            on_press: app.open_color_picker(self.tooltip_text)
+                        BotonConInfo:
+                            opacity: 0
+                            disabled: True
+                            pos_hint: {'right': 1}
+                            theme_text_color: "Custom"
+                            icon:"format-color-highlight"
+                            text_color: 0,0,0,1
+                            tooltip_text: "Rellenar el borde"
+                            on_press: app.open_color_picker(self.tooltip_text)
+                        BotonConInfo:
+                            id: "menu_figuras"
+                            opacity: 0
+                            disabled: True
+                            pos_hint: {'right': 1}
+                            icon:"pencil"
+                            theme_text_color: "Custom"
+                            text_color: 0,0,0,1
+                            tooltip_text: "Seleccionar figuras"
+                            on_press: self.select_shape(self,mode)
+                        BotonConInfo:
+                            pos_hint: {'right': 1}
+                            theme_text_color: "Custom"
+                            icon:"gesture-tap-button"
+                            text_color: 0,0,0,1
+                            tooltip_text: "Mostrar el modo dibujo"
+                            on_press: self.hide_buttons(self,mode,lock,seccion_dibujar,[botones_modo_dibujar_1,botones_modo_dibujar_2,botones_modo_dibujar_3],[label_modo_normal_1,label_modo_dibujar_1])

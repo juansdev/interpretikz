@@ -2,8 +2,7 @@
 #Ignorar todos las imagenes creadas por la APP
 /*.jpg
 /*.gif
-source/**/*.png
-source/**/*.jpg
+/modulos/pytikz/source/**/*.png
+/modulos/pytikz/source/**/*.jpg
 #Carpetas
-__pycache__
-test
+*/__pycache__
