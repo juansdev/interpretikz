@@ -17,16 +17,6 @@ class TabletPc(MDRelativeLayout,MainResponsivo):
         self.ids["seccion_dibujar"].add_widget(self.area_de_dibujar_pc_tablet)
         #Al Widget AreaDeDibujo se le añade el ID "area_de_dibujar"
         self.ids["area_de_dibujar"] = weakref.ref(self.area_de_dibujar_pc_tablet)
-        self.app = MDApp.get_running_app()
-        
-        #Crear botones para generar comandos predeterminados
-        for nombre_comando,conjunto_de_comandos in self.GENERAR_COMANDOS_PREDETERMINADOS.items():
-            boton_generar_comando_predeterminado = MDRaisedButton(md_bg_color=self.app.theme_cls.bg_dark,text=nombre_comando,theme_text_color="Secondary",font_name="media/fonts/OpenSans-SemiBold")
-            #Añadirle el evento para escribir comandos en el Input correspondiente.
-            boton_generar_comando_predeterminado.bind(on_press=partial(self.generar_codigo,conjunto_de_comandos))
-            #Añadirle estilos
-            self.ids["acceso_rapido_sup"].add_widget(boton_generar_comando_predeterminado)
-        
         #Actualizar el Label de informacion de tamaño del lienzo del dibujo
         self.bind(size=self.update)
     

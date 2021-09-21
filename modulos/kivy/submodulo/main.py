@@ -36,6 +36,6 @@ class MainResponsivo():
     def generar_codigo(self,conjunto_de_comandos,*args) ->None:
         """Agrega el conjunto_de_comandos en el Input de escribir codigo."""
         app = MDApp.get_running_app()
-        root_wid = app.root.children[0]
+        responsivo_wid = app.root.children[0]
         """Agrega el contenido del comando del boton de comando utilizado en el Input Codigo."""
-        root_wid.ids["codigo_tikz"].text+=conjunto_de_comandos
+        responsivo_wid.ids["codigo_tikz"].text+=conjunto_de_comandos

@@ -1,3 +1,5 @@
+#Global
+import globales
 #Otras librerias
 from typing import List, Union
 from functools import partial
@@ -8,24 +10,20 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.list import OneLineAvatarListItem, IconLeftWidget
 #LIBRERIAS PROPIAS
 #BD
-from modulos.bd import *
+from modulos.kivy.otros_widgets.aviso_informativo import AvisoInformativo
 #KIVY - Responsivos Widgets
 from modulos.kivy.submodulo.main import MainResponsivo
 
-#CARGAR BD
-conexion_bd = ConexionBD()
-
 class AccesoRapidoAbajo (MDGridLayout,MainResponsivo):
-
+    """Contenedor de los botones inferiores, utilizados para generar comandos guardados por el usuario."""
     def __init__(self, **kwargs):
         super(AccesoRapidoAbajo, self).__init__(**kwargs)
         self.app = MDApp.get_running_app()
-        # MOSTRAR DATOS ACTUALIZADOS EN BOTONES INFERIORES DE DIBUJO
-        conjunto_de_datos = conexion_bd.api_restful("dibujos_usuario", "SELECCIONAR")
-        self.listar_botones_dibujo(conjunto_de_datos)
+        self.listar_botones_dibujo()
         
-    def listar_botones_dibujo(self, conjunto_de_datos: List[Union[int, str, str]]) -> None:
-
+    def listar_botones_dibujo(self) -> None:
+        # Cargar botones de dibujo desde la BD
+        conjunto_de_datos = globales.conexion_bd.api_restful("dibujos_usuario", "SELECCIONAR")
         def eliminar_dibujo(id: int, nombre_dibujo: str, instance):
             # Agregar los comportamientos correspondientes
             btn_eliminar_dibujo = MDFlatButton(
@@ -39,13 +37,19 @@ class AccesoRapidoAbajo (MDGridLayout,MainResponsivo):
             )
 
             def eliminar(id, instance):
-                conexion_bd.api_restful("dibujos_usuario", "ELIMINAR", [id])
-                datos = conexion_bd.api_restful(
-                    "dibujos_usuario", "SELECCIONAR")
-                self.listar_botones_dibujo(datos)
-                AvisoInformativo.cerrar_aviso_informativo(
-                    aviso_informativo, aviso_informativo.md_dialog)
-            btn_eliminar_dibujo.bind(on_press=partial(eliminar, id))
+                mensaje_de_error = globales.conexion_bd.api_restful("dibujos_usuario", "ELIMINAR", [id])
+                #Cerrar dialog actual
+                AvisoInformativo.cerrar_aviso_informativo(aviso_informativo, aviso_informativo.md_dialog)
+                #Abrir dialog informativo de cambio
+                if(mensaje_de_error):
+                    mensaje = "Ocurrio un error al eliminar el dibujo.\n"+"Error: "+mensaje_de_error
+                    AvisoInformativo(
+                        titulo="Error al eliminar",
+                        mensaje=mensaje
+                    )
+                else:
+                    self.listar_botones_dibujo()
+            btn_eliminar_dibujo.bind(on_release=partial(eliminar, id))
 
         # Eliminar los botones anteriores
         self.clear_widgets()
@@ -65,10 +69,10 @@ class AccesoRapidoAbajo (MDGridLayout,MainResponsivo):
             )
             # Agregar evento a la lista y su icono
             # Comportamiento agregar comandos al input de escribir codigo tikz
-            lista_dibujo.bind(on_press=partial(
+            lista_dibujo.bind(on_release=partial(
                 self.generar_codigo, comandos_dibujo))
             # Comportamiento eliminar dibujo segun id de la BD
-            icon_eliminar_dibujo.bind(on_press=partial(
+            icon_eliminar_dibujo.bind(on_release=partial(
                 eliminar_dibujo, id, nombre_dibujo))
             # Agregar botones hijos al box padre
             lista_dibujo.add_widget(icon_eliminar_dibujo)
@@ -79,17 +83,18 @@ class AccesoRapidoAbajo (MDGridLayout,MainResponsivo):
     def guardar_dibujo(self, nombre_dibujo: str, comandos_dibujo: str) -> None:
         arr_datos = [nombre_dibujo, comandos_dibujo]
         # INSERTAR DATOS EN LA BD
-        operacion_valida = conexion_bd.api_restful(
-            "dibujos_usuario", "INSERTAR", arr_datos)
-        if operacion_valida:
-            # MOSTRAR DATOS ACTUALIZADOS
-            conjunto_de_datos = conexion_bd.api_restful(
-                "dibujos_usuario", "SELECCIONAR")
-            self.listar_botones_dibujo(conjunto_de_datos)
-            mensaje = "El dibujo "+nombre_dibujo+" se guardo con exito"
+        mensaje_de_error = globales.conexion_bd.api_restful("dibujos_usuario", "INSERTAR", arr_datos)
+        #Abrir dialog informativo de cambio
+        if(mensaje_de_error):
+            mensaje = "Ocurrio un error al guardar el dibujo "+nombre_dibujo+".\n"+"Error: "+mensaje_de_error
+            AvisoInformativo(
+                titulo="Error al insertar",
+                mensaje=mensaje
+            )
         else:
-            mensaje = "Ocurrio un error al guardar el dibujo "+nombre_dibujo
-
-        AvisoInformativo(
-            mensaje=mensaje
-        )
+            # MOSTRAR DATOS ACTUALIZADOS
+            self.listar_botones_dibujo()
+            mensaje = "El dibujo "+nombre_dibujo+" se guardo con exito"
+            AvisoInformativo(
+                mensaje=mensaje
+            )

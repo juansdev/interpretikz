@@ -1,8 +1,10 @@
+#OTRAS LIBRERIAS
+import copy
 from functools import partial
 from math import cos, sin, atan2, pi
 from typing import List, Optional
-from copy import deepcopy
 
+#KIVY
 from kivy.clock import Clock
 from kivy.metrics import dp
 from kivy.uix.behaviors.focus import FocusBehavior
@@ -14,8 +16,9 @@ from kivy.graphics import Ellipse, Line, Color, Point, Mesh, PushMatrix, \
     PopMatrix, Rotate, InstructionGroup
 from kivy.graphics.tesselator import Tesselator
 from kivy.event import EventDispatcher
-from kivymd.uix.gridlayout import MDGridLayout
-import copy
+
+#FRAMEWORK KIVYMD
+from kivymd.uix.boxlayout import MDBoxLayout
 
 __all__ = ('PaintCanvasBehavior', 'PaintShape', 'PaintCircle', 'PaintEllipse',
            'PaintPolygon', 'PaintFreeformPolygon', 'PaintPoint',
@@ -450,7 +453,6 @@ class PaintCanvasBehaviorBase(EventDispatcher):
 
         if self.locked or self._processing_touch is not None:
             return super(PaintCanvasBehaviorBase, self).on_touch_down(touch)
-
         if super(PaintCanvasBehaviorBase, self).on_touch_down(touch):
             return True
 
@@ -2572,7 +2574,7 @@ class PaintCanvasBehavior(PaintCanvasBehaviorBase):
             super(PaintCanvasBehavior, self).reorder_shape(shape)
 
 #Clase del Painter
-class PainterWidget(PaintCanvasBehavior, FocusBehavior, MDGridLayout):
+class PainterWidget(PaintCanvasBehavior, FocusBehavior, MDBoxLayout):
 
     keyboard_keys = StringProperty()
     keys_down = set()

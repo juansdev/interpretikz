@@ -47,7 +47,6 @@ class AreaDeDibujo(MDRelativeLayout):
         super(AreaDeDibujo, self).__init__(**kwargs)
         Clock.schedule_interval(self.actualizar_glsl, 0)
         #Paso 4 y 5
-        self.app = MDApp.get_running_app()
         self.info_size = None
         self.ancho_alto_actualizado = ()
         self.bind(size=self.update)

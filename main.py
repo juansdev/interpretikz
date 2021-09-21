@@ -1,6 +1,5 @@
-import kivy, pytz, os
+import kivy, time, os, pathlib
 #Otras librerias
-import datetime
 from functools import partial
 from copy import deepcopy
 #KIVY
@@ -8,6 +7,7 @@ from kivy.core.window import Window
 from kivy.config import Config
 from kivy.lang.builder import Builder
 from kivy.metrics import dp
+from kivy.utils import platform
 #KIVY UIX
 from kivy.uix.colorpicker import ColorPicker
 #FRAMEWORK KIVYMD
@@ -16,32 +16,24 @@ from kivymd.toast import toast
 from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.filemanager import MDFileManager
 #LIBRERIAS PROPIAS
-#BD
-from modulos.bd import *
-#KIVY - Principal Widget
-from modulos.kivy.main import MainWid
-#KIVY - Responsivos Widgets
-from modulos.kivy.responsivos_widgets.movil import Movil
-from modulos.kivy.responsivos_widgets.tablet_pc import TabletPc
-#KIVY - Complementos Widgets
-from modulos.kivy.complementos_widgets.listar_imagenes import ListarImagenes
-#Necesarios para el codigo Kivy.
-from modulos.kivy.complementos_widgets.painter import PainterWidget
-from modulos.kivy.complementos_widgets.boton_con_info import BotonConInfo
-from modulos.kivy.complementos_widgets.acceso_rapido_abajo import AccesoRapidoAbajo
-#KIVY - Otros Widgets
-from modulos.kivy.otros_widgets.aviso_informativo import AvisoInformativo
+#GLOBAL
+import globales
 #PYTIKZ
-from modulos.pytikz import *
-#LIMPIAR RECURSOS
-from modulos.limpiar_recursos import *
+from pytikzgenerate.pytikzgenerate import PytikzGenerate
+#Librerias propias
+#BD
+from modulos.bd import ConexionBD
+#GENEARAR DIAGNOSTICO
+from modulos.logging import GenerarDiagnostico
+#ANDROID
+if(platform=="android"): 
+    from android.storage import primary_external_storage_path
+    from android.permissions import request_permissions, Permission
 
-#CARGAR BD
-conexion_bd = ConexionBD()
+__version__ = "0.2.0"
 
-class MainApp(MDApp):
+class InterpretikzApp(MDApp):
     title = "InterpreTikZ"
-    icon = "media/favicon.png"
     #Impedir que el usuario acceda a las configuraciones de Kivy desde la App
     use_kivy_settings=False
 
@@ -49,17 +41,25 @@ class MainApp(MDApp):
         pass
 
     def __init__(self,**kwargs):
-        super(MainApp,self).__init__(**kwargs)
-        #Configuraciones
-
+        super(InterpretikzApp,self).__init__(**kwargs)
+        #Configuracion - Globales
+        globales.init()
+        globales.ruta_raiz = os.path.dirname(os.path.abspath(__file__))
+        if(platform == "android"):
+            globales.user_data_dir = primary_external_storage_path()#/storage/emulated/0
+        #Mostrar rutas globales
+        GenerarDiagnostico(self.__class__.__name__,"Ruta raiz del directorio: "+globales.ruta_raiz,"info")
+        GenerarDiagnostico(self.__class__.__name__,"Ruta del user_data_dir: "+globales.user_data_dir,"info")
+        globales.conexion_bd = ConexionBD()
         #Estilos
+        self.icon = os.path.join(globales.ruta_raiz,"media/favicon.png")
         self.theme_cls.primary_palette = "Green"
         self.theme_cls.accent_palette = "Green"
         self.estilos = self.__seleccionar_estilo()
         self.estilo_usado_recientemente = self.estilos[0]
         self.theme_cls.theme_style = deepcopy(self.estilo_usado_recientemente)
         #Instancia de clases Widgets hijas
-        self.listar_imagenes_wid = None
+        self.listar_imagenes_mddialog = None
         self.main_wid = None
         self.responsivos_wid = None
         self.explorador_abierto = False
@@ -68,10 +68,10 @@ class MainApp(MDApp):
 
     #Funciones internas de la clase
     def __seleccionar_estilo(self):
-        datos = conexion_bd.api_restful("estilos","SELECCIONAR")
-        estilo_usado_recientemente = datos[0][1]
-        id_light = datos[0][0]
-        id_dark = datos[1][0]
+        conjunto_de_datos = globales.conexion_bd.api_restful("estilos","SELECCIONAR")
+        estilo_usado_recientemente = conjunto_de_datos[0][1]
+        id_light = conjunto_de_datos[0][0]
+        id_dark = conjunto_de_datos[1][0]
         return [estilo_usado_recientemente,id_light,id_dark]
 
     #Funciones utilizados por botones de la GUI
@@ -112,17 +112,24 @@ class MainApp(MDApp):
             self.estilo_usado_recientemente = estilo_a_cambiar
             self.estilo_usado_recientemente = estilo_a_cambiar
             #Actualizar fecha del uso de estilo en la BD
-            utc_ahora = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
-            utc_formateado = datetime.datetime.strftime(utc_ahora,"%Y-%m-%d %H:%M:%S")
+            utc_ahora = time.gmtime()
+            utc_formateado = "%s-%s-%s %s:%s:%s"%(utc_ahora.tm_year,utc_ahora.tm_mon,utc_ahora.tm_mday,utc_ahora.tm_hour,utc_ahora.tm_min,utc_ahora.tm_sec)
             arr_datos = [id,estilo_a_cambiar,utc_formateado]
-            conexion_bd.api_restful("estilos","ACTUALIZAR",arr_datos)
+            mensaje_de_error = globales.conexion_bd.api_restful("estilos","ACTUALIZAR",arr_datos)
             #Cerrar dialog actual
             AvisoInformativo.cerrar_aviso_informativo(aviso_informativo,aviso_informativo.md_dialog)
             #Abrir dialog informativo de cambio
-            AvisoInformativo(
-                mensaje="Reinicia la aplicacion para efectuar los cambios"
-            )
-        btn_aplicar.bind(on_press=partial(aplicar_cambios,id,estilo_a_cambiar))
+            if(mensaje_de_error):
+                mensaje = "Ocurrio un error al actualizar la hora en la que se elegio el estilo.\n"+"Error: "+mensaje_de_error
+                AvisoInformativo(
+                    titulo="Error al actualizar",
+                    mensaje=mensaje
+                )
+            else:
+                AvisoInformativo(
+                    mensaje="Reinicia la aplicacion para efectuar los cambios"
+                )
+        btn_aplicar.bind(on_release=partial(aplicar_cambios,id,estilo_a_cambiar))
 
     def mostrar_informacion(self,*args):
         AvisoInformativo(
@@ -133,24 +140,22 @@ class MainApp(MDApp):
     def compilar(self,codigo_tikz):
         movil_wid, tablet_pc_wid = self.responsivos_wid
         #Si esta en Celular...
-        if self.main_wid.responsivo_estado[0] in ("XS","S"):
+        if self.main_wid.vista_movil:
             area_de_dibujar_movil = movil_wid.ids["area_de_dibujar"]()
             area_de_dibujar_movil.limpiar_canvas()
-            Pytikz(codigo_tikz,area_de_dibujar_movil)
+            PytikzGenerate(codigo_tikz,area_de_dibujar_movil,globales.user_data_dir)
         #Si esta en PC o Tablet...
         else:
             area_de_dibujar_pc_tablet = tablet_pc_wid.ids["area_de_dibujar"]()
             area_de_dibujar_pc_tablet.limpiar_canvas()
-            Pytikz(codigo_tikz,area_de_dibujar_pc_tablet)
+            PytikzGenerate(codigo_tikz,area_de_dibujar_pc_tablet,globales.user_data_dir)
 
     #Funciones en el listador de imagenes
     def listar_imagenes_popup(self,*arg):
-
-        self.listar_imagenes_wid = ListarImagenes(self.main_wid)
-        AvisoInformativo(
+        self.listar_imagenes_mddialog = AvisoInformativo(
             titulo="Lista de imagenes de fondo:",
             tipo="custom",
-            contenido_cls=self.listar_imagenes_wid,
+            contenido_cls=ListarImagenes(),
         )
 
     def cargar_imagen(self, path):
@@ -159,32 +164,42 @@ class MainApp(MDApp):
         extension_img = [".jpg",".jpeg",".png"]
         if extension in extension_img:
             #Guardar imagen de fondo
-            self.listar_imagenes_wid.agregar_fondo(path)
+            self.listar_imagenes_mddialog.md_dialog.content_cls.agregar_fondo(path)
+            self.cerrar_explorador()
+            toast(path)
         else:
             #Informar al usuario del error en Dialog
             AvisoInformativo(
                 titulo="Error al subir imagen a la Base de Datos",
-                mensaje="La extension "+extension+" no es valida."
+                mensaje="La extension "+extension+" no es valida.\nLas siguientes extensiones son validas: .jpg, .jpeg, .png"
             )
-        
+            self.cerrar_explorador(extension_invalida=True)
         self.explorador_abierto = False
-        self.cerrar_explorador()
-        toast(path)
 
     #Funciones mostrar explorador
-    def mostrar_explorador(self,objetivo):
+    def mostrar_explorador(self,objetivo,listar_imagenes):
         if objetivo == "cargar_imagen":
+            #Cerrar el dialog de listar imagenes
+            aviso_informativo = self.listar_imagenes_mddialog
+            AvisoInformativo.cerrar_aviso_informativo(aviso_informativo,aviso_informativo.md_dialog)
+            #Abrir dialog del explorador
             self.explorador = MDFileManager(
                 exit_manager=self.cerrar_explorador,
                 select_path=self.cargar_imagen
             )
         #Inicio de la ruta del explorador
-        self.explorador.show('C:\\')
+        if(platform=="win"):
+            self.explorador.show(str(pathlib.Path.home()))
+        elif(platform=="android"):
+            self.explorador.show(globales.user_data_dir)
         self.explorador_abierto = True
 
-    def cerrar_explorador(self, *args):
+    def cerrar_explorador(self, args=None, extension_invalida=False):
+        #Cerrar el dialog del explorador
         self.explorador_abierto = False
         self.explorador.close()
+        #Abrir el dialog de listar imagenes
+        if(not extension_invalida): self.listar_imagenes_mddialog.md_dialog.open()
 
     def eventos(self, instance, keyboard, keycode, text, modifiers):
         '''Se llamara cuando los botones son presionados en un dispositivo movil.'''
@@ -200,8 +215,8 @@ class MainApp(MDApp):
     #Abrir Dialog del Color Picker
     def open_color_picker(self,tooltip_text):
         #Dialog
-        color_picker = ColorPicker(size_hint_y= None, height= dp(400),font_name="media/fonts/OpenSans-SemiBold")
-        btn_salir = MDRaisedButton(text="Salir",font_name="media/fonts/OpenSans-SemiBold")
+        color_picker = ColorPicker(size_hint_y= None, height= dp(400),font_name=os.path.join(globales.ruta_raiz,"media/fonts/OpenSans-SemiBold"))
+        btn_salir = MDRaisedButton(text="Salir",font_name=os.path.join(globales.ruta_raiz,"media/fonts/OpenSans-SemiBold"))
         aviso_informativo = AvisoInformativo(
             titulo="Paleta de colores:",
             tipo="custom",
@@ -219,7 +234,7 @@ class MainApp(MDApp):
                 seccion_dibujar = responsivo_wid.ids.seccion_dibujar
                 seccion_dibujar.selected_shapes_for_fill = []
             AvisoInformativo.cerrar_aviso_informativo(aviso_informativo,aviso_informativo.md_dialog)
-        btn_salir.bind(on_press=cerrar_color_picker_dialog)
+        btn_salir.bind(on_release=cerrar_color_picker_dialog)
 
     def update_color(self, responsivo_wid, pintar_relleno_fondo,label_text, selected_color):
         #Wid seccion_dibujar - PC - Movil
@@ -251,17 +266,32 @@ class MainApp(MDApp):
                 label_text = responsivo_wid.ids.color_borde
             self.update_color(responsivo_wid,pintar_relleno_fondo,label_text,selected_color)
 
-    #Lanzar aplicacion
+    #Construir aplicacion
     def build(self):
         #CARGAR ARCHIVOS KIVYS
-        Builder.load_file("kivy/responsivo/movil.kv")
-        Builder.load_file("kivy/responsivo/tablet_pc.kv")
-        Builder.load_file("kivy/listar_imagenes.kv")
+        Builder.load_file(os.path.join(globales.ruta_raiz,"kivy/responsivo/movil.kv"))
+        Builder.load_file(os.path.join(globales.ruta_raiz,"kivy/responsivo/tablet_pc.kv"))
+        Builder.load_file(os.path.join(globales.ruta_raiz,"kivy/listar_imagenes.kv"))
         #Instanciar Main_wid
         self.responsivos_wid = [Movil(),TabletPc()]
         movil_wid, tablet_pc_wid = self.responsivos_wid
         self.main_wid = MainWid(movil_wid, tablet_pc_wid)
         return self.main_wid
+
+    #Evento ejecutado despues del build
+    def on_start(self):
+        #Solicitar permisos de acceso al Android
+        if(platform == "android"):
+            def callback(permisos, resultados):
+                GenerarDiagnostico(self.__class__.__name__,'Permisos:','info')
+                GenerarDiagnostico(self.__class__.__name__,permisos,'info')
+                GenerarDiagnostico(self.__class__.__name__,'Permisos concedidos:','info')
+                GenerarDiagnostico(self.__class__.__name__,resultados,'info')
+                if all([res for res in resultados]):
+                    GenerarDiagnostico(self.__class__.__name__,'Todos los permisos fueron concedidos!','info')
+                else:
+                    GenerarDiagnostico(self.__class__.__name__,'No todos los permisos fueron concedidos!','info')
+            request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE], callback)
 
 if __name__ == "__main__":
     #Version de Kivy utilizado
@@ -271,7 +301,23 @@ if __name__ == "__main__":
     #Cancela las herramientas de desarrollador Kivy".
     Config.set("input","mouse","mouse,multitouch_on_demand")
     #El keyboard movil aparecera bajo el input.
-    Window.softinput_mode = 'below_target'
+    Window.keyboard_anim_args = {'d': .2, 't': 'in_out_expo'}
+    Window.softinput_mode = "below_target"
+    #Widgets
+    #KIVY - Principal Widget
+    from modulos.kivy.main import MainWid
+    #KIVY - Responsivos Widgets
+    from modulos.kivy.responsivos_widgets.movil import Movil
+    from modulos.kivy.responsivos_widgets.tablet_pc import TabletPc
+    #KIVY - Complementos Widgets
+    from modulos.kivy.complementos_widgets.listar_imagenes import ListarImagenes
+    #Necesarios para el codigo Kivy.
+    from modulos.kivy.complementos_widgets.main_scrollview import MainScrollView
+    from modulos.kivy.complementos_widgets.painter import PainterWidget
+    from modulos.kivy.complementos_widgets.boton_con_info import BotonConInfo
+    from modulos.kivy.complementos_widgets.acceso_rapido_arriba import AccesoRapidoArriba
+    from modulos.kivy.complementos_widgets.acceso_rapido_abajo import AccesoRapidoAbajo
+    #KIVY - Otros Widgets
+    from modulos.kivy.otros_widgets.aviso_informativo import AvisoInformativo
     #Lanzar aplicacion Kivy
-    MainApp().run()
-    limpiar_recursos()
+    InterpretikzApp().run()

@@ -5,7 +5,13 @@
     orientation: 'vertical'
     spacing: dp(1)
     ScrollView:
+        bar_color: .1686274509803922, .1764705882352941, .1843137254901961, 1
+        bar_inactive_color: .5019607843137255, .5019607843137255, .5019607843137255, 1
+        bar_width: dp(30)
+        effect_cls: "ScrollEffect"
+        scroll_type: ['bars']
         size_hint_y: .9
+        do_scroll_x: False
         MDGridLayout:
             size_hint_x: 1
             id:lista_imagenes
@@ -16,14 +22,14 @@
             padding: dp(4), dp(4)
             spacing: dp(4)
     MDBoxLayout:
+        id: container_btn
         spacing: dp(4)
         size_hint_y: .1
         MDRectangleFlatIconButton:
-            size_hint_y: None
-            size_hint_x: 1
+            width: container_btn.size[0]
             font_name: "media/fonts/OpenSans-SemiBold"
             font_style: "Button"
             height: dp(35)
             icon: "folder"
             text: "Buscar imagen"
-            on_release: app.mostrar_explorador('cargar_imagen')
+            on_release: app.mostrar_explorador('cargar_imagen',root)

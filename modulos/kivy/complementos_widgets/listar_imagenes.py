@@ -1,5 +1,7 @@
+#Global
+import globales
 #Otras librerias
-import pytz, os
+import time, os
 from functools import partial
 from datetime import datetime
 #KIVY
@@ -7,35 +9,28 @@ from kivy.metrics import dp
 #KIVY GRAPHIC
 from kivy.graphics import Rectangle
 #FRAMEWORK KIVYMD
+from kivymd.app import MDApp
 from kivymd.uix.imagelist import SmartTileWithLabel
 from kivymd.uix.button import MDRaisedButton, MDFlatButton
 from kivymd.uix.boxlayout import MDBoxLayout
 #LIBRERIAS PROPIAS
-from modulos.bd import ConexionBD
 from modulos.kivy.otros_widgets.aviso_informativo import AvisoInformativo
-
-#CARGAR BD
-conexion_bd = ConexionBD()
 
 # Clase contenedor donde se lista las imagenes
 class ListarImagenes(MDBoxLayout):
     """Widget de "Listar Imagenes" del aplicativo."""
-    def __init__(self, main_wid:object, **kwargs):
-        """1. Recoge los fondos de pantalla de la BD y los agrega al Widget identificado como "lista_imagenes".
-        
-        Propiedad:
-        - main_wid = MainWid (object), es el Widget padre de "Listar Imagenes"."""
+    def __init__(self, **kwargs):
+        """1. Recoge los fondos de pantalla de la BD y los agrega al Widget identificado como "lista_imagenes"."""
         super(ListarImagenes, self).__init__(**kwargs)
         self.listar_fondos()
-        self.main_wid = main_wid
+        self.root_wid = MDApp.get_running_app().root
 
     def listar_fondos(self) -> None:
         """Recoge los fondos de pantalla de la BD y los agrega al Widget identificado como "lista_imagenes"."""
         # Limpiar fondos anteriores
         self.ids["lista_imagenes"].clear_widgets()
         # Cargar imagenes desde la BD
-        conjunto_de_datos = conexion_bd.api_restful(
-            "imagenes_de_fondo","SELECCIONAR")
+        conjunto_de_datos = globales.conexion_bd.api_restful("imagenes_de_fondo","SELECCIONAR")
         for fila in conjunto_de_datos:
             id = fila[0]
             ruta = fila[1]
@@ -45,7 +40,7 @@ class ListarImagenes(MDBoxLayout):
             texto = "[size=26]"+nombre_del_archivo+"[/size]\n[size=14]" + \
                 nombre_de_archivo_con_extension+"[/size]"
             smart_title_with_label = SmartTileWithLabel(source=ruta, text=texto, box_color=[
-                                                        0, 0, 0, 0], on_press=partial(self.fondo_seleccionado, id))
+                                                        0, 0, 0, 0], on_release=partial(self.fondo_seleccionado, id))
             # Agregar botones actualizados al acceso rapido
             self.ids["lista_imagenes"].add_widget(smart_title_with_label)
 
@@ -56,9 +51,15 @@ class ListarImagenes(MDBoxLayout):
         - ruta_imagen (str), ruta de la imagen."""
         arr_datos = [ruta_imagen]
         # INSERTAR DATOS EN LA BD
-        operacion_valida = conexion_bd.api_restful(
-            "imagenes_de_fondo","INSERTAR", arr_datos)
-        if operacion_valida:
+        mensaje_de_error = globales.conexion_bd.api_restful("imagenes_de_fondo","INSERTAR", arr_datos)
+        #Abrir dialog informativo de cambio
+        if(mensaje_de_error):
+            mensaje = "Ocurrio un error al insertar la imagen "+ruta_imagen+".\n"+"Error: "+mensaje_de_error
+            AvisoInformativo(
+                titulo="Error al insertar",
+                mensaje=mensaje
+            )
+        else:
             # MOSTRAR DATOS ACTUALIZADOS
             self.listar_fondos()
 
@@ -89,17 +90,26 @@ class ListarImagenes(MDBoxLayout):
             - id (int), ID de la imagen_de_fondo.
             - ruta (str), ruta de la imagen_de_fondo."""
             # Actualizar fecha de uso de la imagen en la BD
-            utc_ahora = datetime.utcnow().replace(tzinfo=pytz.utc)
-            utc_formateado = datetime.strftime(utc_ahora, "%Y-%m-%d %H:%M:%S")
+            utc_ahora = time.gmtime()
+            utc_formateado = "%s-%s-%s %s:%s:%s"%(utc_ahora.tm_year,utc_ahora.tm_mon,utc_ahora.tm_mday,utc_ahora.tm_hour,utc_ahora.tm_min,utc_ahora.tm_sec)
             arr_datos = [id, ruta, utc_formateado]
-            conexion_bd.api_restful("imagenes_de_fondo","ACTUALIZAR", arr_datos)
-            # Reemplazar imagen anterior por esta...
-            self.main_wid.canvas.before.clear()
-            with self.main_wid.canvas.before:
-                Rectangle(source=ruta, size=self.main_wid.size,
-                        pos=self.main_wid.pos)
+            mensaje_de_error = globales.conexion_bd.api_restful("imagenes_de_fondo","ACTUALIZAR", arr_datos)
+            #Cerrar dialog actual
             AvisoInformativo.cerrar_aviso_informativo(aviso_informativo,aviso_informativo.md_dialog)
-            self.main_wid.imagen_de_fondo_usado_recientemente = ruta
+            #Abrir dialog informativo de cambio
+            if(mensaje_de_error):
+                mensaje = "Ocurrio un error al actualizar la fecha en la que se uso la imagen "+ruta+".\n"+"Error: "+mensaje_de_error
+                AvisoInformativo(
+                    titulo="Error al actualizar",
+                    mensaje=mensaje
+                )
+            else:
+                # Reemplazar imagen anterior por esta...
+                self.root_wid.canvas.before.clear()
+                with self.root_wid.canvas.before:
+                    Rectangle(source=ruta, size=self.root_wid.size,
+                            pos=self.root_wid.pos)
+                self.root_wid.imagen_de_fondo_usado_recientemente = ruta
 
         def eliminar_fondo(id:int, instance:MDFlatButton) -> None:
             """Elimina el fondo de pantalla segun ID, en la tabla "imagenes_de_fondo".
@@ -107,13 +117,20 @@ class ListarImagenes(MDBoxLayout):
             Parametro:
             - id (int), ID de la imagen_de_fondo."""
             # ELIMINAR IMAGEN DE LA BD
-            operacion_valida = conexion_bd.api_restful(
-                "imagenes_de_fondo","ELIMINAR", [id])
-            if operacion_valida:
+            mensaje_de_error = globales.conexion_bd.api_restful("imagenes_de_fondo","ELIMINAR", [id])
+            #Cerrar dialog actual
+            AvisoInformativo.cerrar_aviso_informativo(aviso_informativo,aviso_informativo.md_dialog)
+            #Abrir dialog informativo de cambio
+            if(mensaje_de_error):
+                mensaje = "Ocurrio un error al eliminar la imagen.\n"+"Error: "+mensaje_de_error
+                AvisoInformativo(
+                    titulo="Error al eliminar",
+                    mensaje=mensaje
+                )
+            else:
                 # MOSTRAR DATOS ACTUALIZADOS
                 self.listar_fondos()
-            AvisoInformativo.cerrar_aviso_informativo(aviso_informativo,aviso_informativo.md_dialog)
 
-        btn_eliminar_imagen.bind(on_press=partial(eliminar_fondo, id))
+        btn_eliminar_imagen.bind(on_release=partial(eliminar_fondo, id))
         btn_seleccionar_imagen.bind(
-            on_press=partial(seleccionar_fondo, id, ruta))
+            on_release=partial(seleccionar_fondo, id, ruta))

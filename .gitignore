@@ -1,8 +1,4 @@
 #Archivos
-#Ignorar todos las imagenes creadas por la APP
-/*.jpg
-/*.gif
-/modulos/pytikz/source/**/*.png
-/modulos/pytikz/source/**/*.jpg
+*.pyc
 #Carpetas
-*/__pycache__
+__pycache__/

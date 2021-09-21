@@ -1,8 +1,11 @@
-#KIVYMD UIX
+#GLOBAL
+import globales
+#Otras librerias
+import os
 from functools import partial
+#FRAMEWORK KIVYMD
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDRaisedButton
-
 class AvisoInformativo():
 
     """Lanza una ventana informativa.
@@ -24,7 +27,7 @@ class AvisoInformativo():
         - auto_desaparecer = True (bool), si es False la ventana informativa no desaparecera, si das clic fuera de ella.
         """
 
-        btn_salir = MDRaisedButton(text='Cancelar', text_color=[0,0,0,1], font_name="media/fonts/OpenSans-SemiBold")
+        btn_salir = MDRaisedButton(text='Cancelar', text_color=[0,0,0,1], font_name=os.path.join(globales.ruta_raiz,"media/fonts/OpenSans-SemiBold"))
         
         if not len(botones_adicionales):
             botones_adicionales = [btn_salir]
@@ -44,7 +47,7 @@ class AvisoInformativo():
 
         self.md_dialog.open()
         
-        btn_salir.bind(on_press=partial(self.cerrar_aviso_informativo,self.md_dialog))
+        btn_salir.bind(on_release=partial(self.cerrar_aviso_informativo,self.md_dialog))
 
     def cerrar_aviso_informativo(self,md_dialog,*args)->None:
         """Cierra la ventana informativa."""
