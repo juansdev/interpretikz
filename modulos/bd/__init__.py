@@ -47,14 +47,18 @@ class ConexionBD(object):
     def __conectar_a_la_base_de_datos(self, *args) -> None:
         """Agrega las tablas necesarias para el aplicativo, en la base de datos si estas no existen. Si la base de datos ya existe, se generara un mensaje de diagnostico."""
         con = connect(self.ruta_bd)
+        cursor = con.cursor()
         try:
-            cursor = con.cursor()
             self.__crear_tablas(cursor,con)
-            self.__insertar_datos_por_defecto(cursor,con)
-            con.close()
+            GenerarDiagnostico(self.__class__.__name__,"Tablas cargadas de forma exitosa a la base de datos",'info')
         except Exception as e:
             GenerarDiagnostico(self.__class__.__name__,e,'info')
-            con.close()
+        datos_por_defecto_insertados = self.__insertar_datos_por_defecto(cursor,con)
+        if(datos_por_defecto_insertados):
+            GenerarDiagnostico(self.__class__.__name__,"Datos por defecto cargados de forma exitosa a la base de datos",'info')
+        else:
+            GenerarDiagnostico(self.__class__.__name__,"Los datos por defectos ya habian sido cargados por primera vez",'info')
+        con.close()
 
     def __crear_tablas(self,cursor:Cursor,con:Connection) -> None:
         """Crea las tablas necesarias del aplicativo en la base de datos.
@@ -98,29 +102,38 @@ class ConexionBD(object):
         
         Parametros:
         - cursor (Cursor)
-        - con (Connection)"""
-        ruta_fondo_claro = os.path.join(globales.ruta_raiz,"media/fondo_de_imagenes/Fondo_claro.jpg")
-        cursor.execute(
-            "INSERT INTO imagenes_de_fondo (ruta) VALUES ('"+ruta_fondo_claro+"');"
-        )
-        con.commit()
-        ruta_fondo_oscuro = os.path.join(globales.ruta_raiz,"media/fondo_de_imagenes/Fondo_oscuro.jpg")
-        cursor.execute(
-            "INSERT INTO imagenes_de_fondo (ruta) VALUES ('"+ruta_fondo_oscuro+"');"
-        )
-        con.commit()
-        cursor.execute(
-            """
-            INSERT INTO estilos (estilo) VALUES ("Light");
-            """
-        )
-        con.commit()
-        cursor.execute(
-            """
-            INSERT INTO estilos (estilo) VALUES ("Dark");
-            """
-        )
-        con.commit()
+        - con (Connection)
+        
+        Retorna:
+        True/False, en el caso de que sea la primera vez que se abre la aplicacion retornara True, caso contrario False."""
+        datos = self.api_restful("estilos","SELECCIONAR")
+        #Si no hay datos en la tabla de estilos, se deduce de que es la primera vez que abre la aplicacion.
+        if(not len(datos)):
+            ruta_fondo_claro = os.path.join(globales.ruta_raiz,"media/fondo_de_imagenes/Fondo_claro.jpg")
+            cursor.execute(
+                "INSERT INTO imagenes_de_fondo (ruta) VALUES ('"+ruta_fondo_claro+"');"
+            )
+            con.commit()
+            ruta_fondo_oscuro = os.path.join(globales.ruta_raiz,"media/fondo_de_imagenes/Fondo_oscuro.jpg")
+            cursor.execute(
+                "INSERT INTO imagenes_de_fondo (ruta) VALUES ('"+ruta_fondo_oscuro+"');"
+            )
+            con.commit()
+            cursor.execute(
+                """
+                INSERT INTO estilos (estilo) VALUES ("Light");
+                """
+            )
+            con.commit()
+            cursor.execute(
+                """
+                INSERT INTO estilos (estilo) VALUES ("Dark");
+                """
+            )
+            con.commit()
+            return True
+        else:
+            return False
 
     def api_restful(self,nombre_tabla:str,instruccion_sql:str,valores:List[Union[str,int,float]]=[]) -> Union[None,str,list]:
         """Interactua con la base de datos de la aplicacion. Si ocurre algun error a nivel del cliente, se devolvera un mensaje con el error. Si ocurre algun error a nivel de desarrollo, se generara un diagnostico.
