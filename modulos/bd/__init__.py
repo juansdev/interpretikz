@@ -27,7 +27,7 @@ class ConexionBD(object):
         Retorna:
         - La clase instanciada (object).
         """
-        if ConexionBD.__instance is None:
+        if ConexionBD.__instance == None:
             ConexionBD.__instance = object.__new__(cls)
             ConexionBD.__instance.__init__(ConexionBD.__instance)
             ConexionBD.__instance.__conectar_a_la_base_de_datos(ConexionBD.__instance)
@@ -205,13 +205,13 @@ class ConexionBD(object):
                 mensaje_de_error = 'Uno o más campos estan vacios'
                 if nombre_tabla == 'dibujos_usuario':
                     nombre_dibujo, comandos_dibujo = valores
-                    if nombre_dibujo is '': mensaje_de_error = "El nombre del dibujo esta vacio."
+                    if nombre_dibujo == '': mensaje_de_error = "El nombre del dibujo esta vacio."
                     else: mensaje_de_error = "No hay comandos para guardar."
                     s1 = 'INSERT INTO %r(nombre_dibujo,comandos_dibujo)'%nombre_tabla
                     s2 = 'VALUES(%r,%r)' %(nombre_dibujo,comandos_dibujo)
                 elif nombre_tabla == "imagenes_de_fondo":
                     ruta = valores[0]
-                    if ruta is '': mensaje_de_error = "La ruta esta vacia."
+                    if ruta == '': mensaje_de_error = "La ruta esta vacia."
                     s1 = 'INSERT INTO %r(ruta)'%nombre_tabla
                     s2 = 'VALUES(%r)' %ruta
                 if '' in valores:
@@ -232,19 +232,19 @@ class ConexionBD(object):
                 mensaje_de_error = 'Uno o más campos estan vacios'
                 if nombre_tabla == 'dibujos_usuario':
                     nombre_dibujo, comandos_dibujo = valores[1::]
-                    if nombre_dibujo is '': mensaje_de_error = "El nombre del dibujo esta vacio."
+                    if nombre_dibujo == '': mensaje_de_error = "El nombre del dibujo esta vacio."
                     else: mensaje_de_error = "No hay comandos para guardar."
                     a1 = ('nombre_dibujo',nombre_dibujo,'comandos_dibujo',comandos_dibujo)
                     s2 = '%r=%r, %r=%r' % a1
                 elif nombre_tabla == 'imagenes_de_fondo':
                     ruta, fecha_de_uso = valores[1::]
-                    if ruta is '': mensaje_de_error = 'La ruta esta vacia.'
+                    if ruta == '': mensaje_de_error = 'La ruta esta vacia.'
                     else: mensaje_de_error = 'La fecha de uso esta vacia.'
                     a1 = ('ruta',ruta,'fecha_de_uso',fecha_de_uso)
                     s2 = '%r=%r,%r=%r' % a1
                 else:
                     estilo, fecha_de_uso = valores[1::]
-                    if estilo is '': mensaje_de_error = "El estilo esta vacio."
+                    if estilo == '': mensaje_de_error = "El estilo esta vacio."
                     else: mensaje_de_error = "La fecha de uso esta vacia."
                     a1 = ('estilo',estilo,'fecha_de_uso',fecha_de_uso)
                     s2 = '%r=%r,%r=%r' % a1

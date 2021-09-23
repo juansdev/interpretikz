@@ -1,4 +1,4 @@
-import kivy, time, os, pathlib
+import kivy, time, os, pathlib, sys
 #Otras librerias
 from functools import partial
 from copy import deepcopy
@@ -45,7 +45,11 @@ class InterpretikzApp(MDApp):
         #Configuracion - Globales
         globales.init()
         globales.ruta_raiz = os.path.dirname(os.path.abspath(__file__))
-        if(platform == "android"):
+        if(platform == "win"):
+            #En ejecucion de un .exe
+            if getattr(sys, 'frozen', False):
+                globales.ruta_raiz = os.path.dirname(os.path.abspath(sys.executable))
+        elif(platform == "android"):
             globales.user_data_dir = primary_external_storage_path()#/storage/emulated/0
         #Mostrar rutas globales
         GenerarDiagnostico(self.__class__.__name__,"Ruta raiz del directorio: "+globales.ruta_raiz,"info")

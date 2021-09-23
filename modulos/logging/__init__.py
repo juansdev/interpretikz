@@ -25,7 +25,7 @@ class GenerarDiagnostico(object):
         Retorna:
         - La clase instanciada (object).
         """
-        if GenerarDiagnostico.__instance is None:
+        if GenerarDiagnostico.__instance == None:
             GenerarDiagnostico.__instance = object.__new__(cls)
         return GenerarDiagnostico.__instance
     

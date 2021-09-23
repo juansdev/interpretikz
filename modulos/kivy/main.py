@@ -48,7 +48,7 @@ class MainWid(MDBoxLayout):
         vista_pc_nuevo = not media_nuevo in ("XS", "S")
         cambio_vista = True if vista_movil_nuevo != self.vista_movil or vista_pc_nuevo != self.vista_pc else False
         if cambio_vista:
-            if vista_movil_nuevo is True != self.vista_movil:
+            if vista_movil_nuevo == True != self.vista_movil:
                 self.vista_movil = vista_movil_nuevo
                 self.vista_pc = vista_pc_nuevo
                 cambio_vista = False
